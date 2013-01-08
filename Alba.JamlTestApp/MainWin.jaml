@@ -1,10 +1,25 @@
 ﻿_={
     $: "Window root",
     Title: "JamlMainWindow", Width: 500, Height: 300,
+    SnapsToDevicePixels: true, TextOptions$TextFormattingMode: "Display",
+    Resources: [{
+        $: "Style stybtnRed", TargetType: "Button",
+        _:[
+            { Background: "Red" },
+            { Foreground: "Blue" }
+        ]
+    },{
+        $: "DataTemplate system:String",
+        _:[{
+            $: "TextBlock", Foreground: "Purple", FontWeight: "Bold"
+        }]
+    }],
     _:[{
-        $: "Grid grdGrid",
-        Tooltip: "Grid!",
+        $: "Grid grdGrid", ToolTip: "Grid!",
         ColumnDefinitions: [ { Width: "auto" } ],
         RowDefinitions: [ { Width: "auto" }, { Width: "auto" }, { Width: "auto" } ],
+        _:[{
+            $: "Button", Grid$: "0 0", Content: "I'm red!", Style: "stybtnRed"
+        }]
     }]
 }

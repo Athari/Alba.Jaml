@@ -1,24 +1,29 @@
 ﻿<Window x:Class="Alba.JamlTestApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="MainWindow" Height="350" Width="525">
+        xmlns:system="clr-namespace:System;assembly=mscorlib"
+        Title="MainWindow" Height="350" Width="525"
+        SnapsToDevicePixels="True" TextOptions.TextFormattingMode="Display">
     <Window.Resources>
         <ResourceDictionary>
             <Style x:Key="stybtnRed" TargetType="Button">
                 <Setter Property="Background" Value="Red"/>
             </Style>
+            <DataTemplate DataType="system:String">
+                <TextBlock Foreground="Purple" FontWeight="Bold" Text="{Binding}"/>
+            </DataTemplate>
         </ResourceDictionary>
     </Window.Resources>
     <Grid x:Name="grdRoot" ToolTip="Grid!">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Button Content="I'm red" Style="{StaticResource stybtnRed}"/>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Button Grid.Row="0" Grid.Column="0" Content="I'm red" Style="{StaticResource stybtnRed}"/>
     </Grid>
 </Window>
