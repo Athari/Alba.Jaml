@@ -9,33 +9,31 @@
     <Window.Resources>
         <Style
             x:Name="stybtnRed"
-            TargetType="Button">
-            <_
-                Background="Red" />
-            <_
-                Foreground="Blue" />
-        </Style>
+            TargetType="Button" />
         <DataTemplate
             x:Name="system:String">
             <TextBlock
                 Foreground="Purple"
-                FontWeight="Bold" />
+                FontWeight="Bold"
+                Text="{Binding}" />
         </DataTemplate>
     </Window.Resources>
     <Grid
         x:Name="grdGrid"
         ToolTip="Grid!">
         <Grid.ColumnDefinitions>
-            <_
-                Width="auto" />
+            <ColumnDefinition
+                Width="Auto" />
+            <ColumnDefinition
+                Width="Auto" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <_
-                Width="auto" />
-            <_
-                Width="auto" />
-            <_
-                Width="auto" />
+            <RowDefinition
+                Height="Auto" />
+            <RowDefinition
+                Height="Auto" />
+            <RowDefinition
+                Height="Auto" />
         </Grid.RowDefinitions>
         <Button
             Grid.="0 0"

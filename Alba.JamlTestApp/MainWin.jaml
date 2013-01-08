@@ -11,13 +11,13 @@
     },{
         $: "DataTemplate system:String",
         _:[{
-            $: "TextBlock", Foreground: "Purple", FontWeight: "Bold"
+            $: "TextBlock", Foreground: "Purple", FontWeight: "Bold", Text: "{Binding}"
         }]
     }],
     _:[{
         $: "Grid grdGrid", ToolTip: "Grid!",
-        ColumnDefinitions: [ { Width: "auto" } ],
-        RowDefinitions: [ { Width: "auto" }, { Width: "auto" }, { Width: "auto" } ],
+        ColumnDefinitions: [ { Width: "Auto" }, { Width: "Auto" } ],
+        RowDefinitions: [ { Height: "Auto" }, { Height: "Auto" }, { Height: "Auto" } ],
         _:[{
             $: "Button", Grid$: "0 0", Content: "I'm red!", Style: "stybtnRed"
         }]

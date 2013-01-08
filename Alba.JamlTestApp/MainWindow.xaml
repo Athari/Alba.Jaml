@@ -8,6 +8,7 @@
         <ResourceDictionary>
             <Style x:Key="stybtnRed" TargetType="Button">
                 <Setter Property="Background" Value="Red"/>
+                <Setter Property="Foreground" Value="Blue"/>
             </Style>
             <DataTemplate DataType="system:String">
                 <TextBlock Foreground="Purple" FontWeight="Bold" Text="{Binding}"/>
