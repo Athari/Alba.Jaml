@@ -1,0 +1,5 @@
+﻿<#@   template hostspecific="true" debug="true" #><#@ output extension="g.xaml"
+#><#@ assembly name="$(SolutionDir)\Alba.Jaml\bin\Debug\Newtonsoft.Json.dll"
+#><#@ assembly name="$(SolutionDir)\Alba.Jaml\bin\Debug\Alba.Jaml.dll"
+#><#@ include file="$(SolutionDir)\Alba.Jaml\T4\Jaml.ttinclude"
+#>

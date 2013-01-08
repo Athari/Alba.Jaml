@@ -1,0 +1,11 @@
+﻿<#@   include file="Common.ttinclude"
+#><#@ import namespace="Alba.Jaml.XamlGeneration"
+#><#+
+    void GenerateJaml () {
+        var T4 = GetT4();
+        var data = LoadJson(null, "jaml");
+        var generator = new XamlGenerator(data, Namespace, Path.GetFileNameWithoutExtension(Host.TemplateFile));
+        Write(generator.GenerateXaml());
+        T4.Process();
+    }
+#>

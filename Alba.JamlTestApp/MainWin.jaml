@@ -1,0 +1,10 @@
+﻿_={
+    $: "Window root",
+    Title: "JamlMainWindow", Width: 500, Height: 300,
+    _:[{
+        $: "Grid grdGrid",
+        Tooltip: "Grid!",
+        ColumnDefinitions: [ { Width: "auto" } ],
+        RowDefinitions: [ { Width: "auto" }, { Width: "auto" }, { Width: "auto" } ],
+    }]
+}
