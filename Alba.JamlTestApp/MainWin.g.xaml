@@ -20,8 +20,6 @@
                 FontWeight="Bold"
                 Text="{Binding }" />
         </DataTemplate>
-        <String
-            x:Key="IamGreenToo">I'm green too!</String>
     </Window.Resources>
     <Grid
         x:Name="grdGrid"

@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Linq;
 using System.Text;
 using System.Windows;
+using System.Windows.Markup;
 using System.Xml;
 using System.Xml.Linq;
 using Newtonsoft.Json.Linq;
@@ -56,6 +57,10 @@ namespace Alba.Jaml.XamlGeneration
             new[] { "{@", "{StaticResource " },
             new[] { "{=", "{Binding " },
         };
+        private static readonly Dictionary<Type, Type> DefaultItemTypes = new Dictionary<Type, Type> {
+            { typeof(SetterBase), typeof(Setter) },
+            { typeof(TriggerBase), typeof(Trigger) },
+        };
 
         private readonly JObject _data;
         private readonly string _nameSpace;
@@ -98,6 +103,7 @@ namespace Alba.Jaml.XamlGeneration
             bool isContDict = contType != null && IsTypeDictionary(contType);
             string visibility, typeName, objName;
             ParseDollarField((string)jobj[Dollar], out visibility, out typeName, out objName);
+
             if (objType == null && typeName == null)
                 //throw new InvalidOperationException("Object type not set." + jobj);
                 return null;
@@ -106,6 +112,7 @@ namespace Alba.Jaml.XamlGeneration
             else if (typeName == null)
                 typeName = objType.Name;
 
+            JToken jcontent = jobj[Content];
             var xobj = new XElement(ns + typeName,
                 // x:ClassModifier/x:FieldModifier="visibility"
                 visibility == null ? null : new XAttribute(nsX + (isRoot ? "Class" : "Field") + "Modifier", visibility),
@@ -117,19 +124,30 @@ namespace Alba.Jaml.XamlGeneration
                 // <attribute>scalarValue</attribute>
                 jobj.Properties().Where(p => p.Name == Content && !p.Value.HasValues).Select(p =>
                     new XText(p.Value.ToString())),
-                // <attribute>complexValue</attribute>
+                // <attribute><complexValue/></attribute>
                 jobj.Properties().Where(p => p.Name != Content && p.Value.HasValues).Select(p =>
                     new XElement(ns + FormatComplexPropertyName(p.Name, typeName),
-                        p.Value.Cast<JObject>().Select(o =>
+                        p.Value.OfType<JObject>().Select(o =>
                             GetXObject(o, GetPropertyItemType(objType, p.Name), GetPropertyType(objType, p.Name)))
                         )),
-                // Content TODO put into appropriate properties, default to ContPropAttr
-                jobj[Content] == null ? null :
-                    (jobj[Content].Type == JTokenType.Object ? new[] { (JObject)jobj[Content] } : jobj[Content].Cast<JObject>())
-                        //.GroupBy(o => o[Dollar] == null ? null : GetContentProperty)
+                // Content
+                jcontent == null ? null :
+                    (jcontent.Type == JTokenType.Object ? new[] { (JObject)jcontent } : jcontent.OfType<JObject>())
                         .Select(o => GetXObject(o, null, null))
                 );
             return xobj;
+        }
+
+        private Tuple<string, Type, Type> GetDefaultContentProperty (Type objType)
+        {
+            var attrContProp = objType.GetCustomAttribute<ContentPropertyAttribute>(true);
+            if (attrContProp == null)
+                throw new InvalidOperationException(string.Format("Content property for type {0} not found.", objType.FullName));
+            Type itemType = GetPropertyItemType(objType, attrContProp.Name);
+            if (DefaultItemTypes.ContainsKey(itemType))
+                itemType = DefaultItemTypes[itemType];
+            Type contType = GetPropertyType(objType, attrContProp.Name);
+            return new Tuple<string, Type, Type>(attrContProp.Name, itemType, contType);
         }
 
         private Type GetPropertyItemType (Type objType, string propName)
@@ -142,17 +160,23 @@ namespace Alba.Jaml.XamlGeneration
             if (dicType != null)
                 return dicType.GetGenericArguments()[1]; // TValue
             if (IsTypeDictionary(propType))
-                return typeof(object);
+                return null;
             return propType;
         }
 
         private Type GetPropertyType (Type objType, string propName)
         {
-            PropertyInfo prop = objType.GetProperty(propName) ?? objType.GetProperty(propName + "Property");
-            if (prop == null)
-                throw new InvalidOperationException(string.Format("Property {0} not found in class {1}.",
-                    propName, objType.FullName));
-            return prop.PropertyType;
+            PropertyInfo prop = objType.GetProperty(propName);
+            if (prop != null)
+                return prop.PropertyType;
+            FieldInfo dfield = objType.GetField(propName + "Property", BindingFlags.Static | BindingFlags.Public);
+            if (dfield != null) {
+                var dprop = dfield.GetValue(null) as DependencyProperty;
+                if (dprop != null)
+                    return dprop.PropertyType;
+            }
+            throw new InvalidOperationException(string.Format("Property {0} not found in class {1}.",
+                propName, objType.FullName));
         }
 
         private Type GetTypeByName (string typeName)
@@ -214,13 +238,7 @@ namespace Alba.Jaml.XamlGeneration
 
         private static string FormatScalarPropertyValue (string value)
         {
-            foreach (string[] markupAlias in MarkupAliases) {
-                if (value.StartsWith(markupAlias[0])) {
-                    value = markupAlias[1] + value.Substring(markupAlias[0].Length);
-                    break;
-                }
-            }
-            return value;
+            return MarkupAliases.Aggregate(value, (v, alias) => v.Replace(alias[0], alias[1]));
         }
 
         private static Type GetGenericInterface (Type type, Type it)
