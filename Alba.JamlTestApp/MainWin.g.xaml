@@ -8,14 +8,17 @@
     x:Class="Alba.JamlTestApp.MainWin" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
     <Window.Resources>
         <Style
-            x:Name="stybtnRed"
+            x:Key="stybtnRed"
+            TargetType="Button" />
+        <Style
+            x:Key="stybtnGreen"
             TargetType="Button" />
         <DataTemplate
-            x:Name="system:String">
+            x:Key="system:String">
             <TextBlock
                 Foreground="Purple"
                 FontWeight="Bold"
-                Text="{Binding}" />
+                Text="{Binding }" />
         </DataTemplate>
     </Window.Resources>
     <Grid
@@ -38,6 +41,10 @@
         <Button
             Grid.="0 0"
             Content="I'm red!"
-            Style="stybtnRed" />
+            Style="{StaticResource stybtnRed}" />
+        <Button
+            Grid.="0 1"
+            Content="I'm green!"
+            Style="{StaticResource stybtnGreen}" />
     </Grid>
 </Window>

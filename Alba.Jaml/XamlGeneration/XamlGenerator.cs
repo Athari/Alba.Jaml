@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reflection;
 using System.Linq;
 using System.Text;
@@ -52,6 +51,11 @@ namespace Alba.Jaml.XamlGeneration
             "System.Windows.Shapes",
             "System.Windows.Shell",
         };
+        private static readonly string[][] MarkupAliases = new[] {
+            new[] { "{@@", "{DynamicResource " },
+            new[] { "{@", "{StaticResource " },
+            new[] { "{=", "{Binding " },
+        };
 
         private readonly JObject _data;
         private readonly string _nameSpace;
@@ -66,7 +70,7 @@ namespace Alba.Jaml.XamlGeneration
 
         public string GenerateXaml ()
         {
-            var root = GetXObject(_data, null);
+            var root = GetXObject(_data, null, null);
             root.Add(
                 //new XAttribute("xmlns", ns),
                 new XAttribute(XNamespace.Xmlns + "x", nsX),
@@ -88,9 +92,10 @@ namespace Alba.Jaml.XamlGeneration
             //return xaml.ToString();
         }
 
-        private XElement GetXObject (JObject jobj, Type objType)
+        private XElement GetXObject (JObject jobj, Type objType, Type contType)
         {
             bool isRoot = jobj.Parent == null;
+            bool isContDict = contType != null && IsTypeDictionary(contType);
             string visibility, typeName, objName;
             ParseDollarField((string)jobj[Dollar], out visibility, out typeName, out objName);
             if (objType == null && typeName == null)
@@ -102,21 +107,22 @@ namespace Alba.Jaml.XamlGeneration
                 typeName = objType.Name;
 
             var xobj = new XElement(ns + typeName,
-                // ClassModifier/FieldModifier="visibility"
+                // x:ClassModifier/x:FieldModifier="visibility"
                 visibility == null ? null : new XAttribute(nsX + (isRoot ? "Class" : "Field") + "Modifier", visibility),
-                // x:Name="objName"
-                objName == null ? null : new XAttribute(nsX + "Name", objName),
+                // x:Name/x:Key="objName"
+                objName == null ? null : new XAttribute(nsX + (isContDict ? "Key" : "Name"), objName),
                 // attribute="scalarValue"
                 jobj.Properties().Where(p => p.Name != Dollar && !p.Value.HasValues).Select(p =>
-                    new XAttribute(FormatScalarPropertyName(p.Name), p.Value.ToString())),
+                    new XAttribute(FormatScalarPropertyName(p.Name), FormatScalarPropertyValue(p.Value.ToString()))),
                 // <attribute>complexValue</attribute>
                 jobj.Properties().Where(p => p.Name != Content && p.Value.HasValues).Select(p =>
                     new XElement(ns + FormatComplexPropertyName(p.Name, typeName),
-                        p.Value.Cast<JObject>().Select(o => GetXObject(o, GetPropertyItemType(objType, p.Name)))
+                        p.Value.Cast<JObject>().Select(o =>
+                            GetXObject(o, GetPropertyItemType(objType, p.Name), GetPropertyType(objType, p.Name)))
                         )),
                 // Content TODO put into appropriate properties, default to ContPropAttr
                 jobj.Property(Content) == null ? null :
-                    jobj.Property(Content).Value.Cast<JObject>().Select(o => GetXObject(o, null))
+                    jobj.Property(Content).Value.Cast<JObject>().Select(o => GetXObject(o, null, null))
                 );
             return xobj;
         }
@@ -130,7 +136,7 @@ namespace Alba.Jaml.XamlGeneration
             var dicType = GetGenericInterface(propType, typeof(IDictionary<,>));
             if (dicType != null)
                 return dicType.GetGenericArguments()[1]; // TValue
-            if (objType.GetInterfaces().Any(it => it == typeof(IDictionary)))
+            if (IsTypeDictionary(propType))
                 return typeof(object);
             return propType;
         }
@@ -198,9 +204,26 @@ namespace Alba.Jaml.XamlGeneration
             return name.IndexOf('.') == -1 ? string.Format("{0}.{1}", className, name) : name;
         }
 
+        private static string FormatScalarPropertyValue (string value)
+        {
+            foreach (string[] markupAlias in MarkupAliases) {
+                if (value.StartsWith(markupAlias[0])) {
+                    value = markupAlias[1] + value.Substring(markupAlias[0].Length);
+                    break;
+                }
+            }
+            return value;
+        }
+
         private static Type GetGenericInterface (Type type, Type it)
         {
             return type.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == it);
+        }
+
+        private static bool IsTypeDictionary (Type type)
+        {
+            return type.GetInterfaces().Any(it => it == typeof(IDictionary))
+                || GetGenericInterface(type, typeof(IDictionary<,>)) != null;
         }
     }
 }
