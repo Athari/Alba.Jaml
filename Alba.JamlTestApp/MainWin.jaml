@@ -13,10 +13,12 @@
             { Background: "Green" }, { Foreground: "Yellow" }
         ]
     },{
-        $: "DataTemplate system:String",
+        $: "DataTemplate String",
         _:[{
             $: "TextBlock", Foreground: "Purple", FontWeight: "Bold", Text: "{=}"
         }]
+    },{
+        $: "String IamGreenToo", _: "I'm green too!"
     }],
     _:[{
         $: "Grid grdGrid", ToolTip: "Grid!",
@@ -26,6 +28,12 @@
             $: "Button", Grid$: "0 0", Content: "I'm red!", Style: "{@stybtnRed}"
         },{
             $: "Button", Grid$: "0 1", Content: "I'm green!", Style: "{@stybtnGreen}"
+        },{
+            $: "Button", Grid$: "1 0", Style: "{@stybtnRed}",
+            _: "I'm red too!"
+        },{
+            $: "Button", Grid$: "1 1", Style: "{@stybtnGreen}",
+            _: { $: "StaticResource", ResourceKey: "IamGreenToo" }
         }]
     }]
 }

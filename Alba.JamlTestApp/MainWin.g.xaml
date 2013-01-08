@@ -14,12 +14,14 @@
             x:Key="stybtnGreen"
             TargetType="Button" />
         <DataTemplate
-            x:Key="system:String">
+            x:Key="String">
             <TextBlock
                 Foreground="Purple"
                 FontWeight="Bold"
                 Text="{Binding }" />
         </DataTemplate>
+        <String
+            x:Key="IamGreenToo">I'm green too!</String>
     </Window.Resources>
     <Grid
         x:Name="grdGrid"
@@ -46,5 +48,14 @@
             Grid.="0 1"
             Content="I'm green!"
             Style="{StaticResource stybtnGreen}" />
+        <Button
+            Grid.="1 0"
+            Style="{StaticResource stybtnRed}">I'm red too!</Button>
+        <Button
+            Grid.="1 1"
+            Style="{StaticResource stybtnGreen}">
+            <StaticResource
+                ResourceKey="IamGreenToo" />
+        </Button>
     </Grid>
 </Window>

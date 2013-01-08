@@ -112,8 +112,11 @@ namespace Alba.Jaml.XamlGeneration
                 // x:Name/x:Key="objName"
                 objName == null ? null : new XAttribute(nsX + (isContDict ? "Key" : "Name"), objName),
                 // attribute="scalarValue"
-                jobj.Properties().Where(p => p.Name != Dollar && !p.Value.HasValues).Select(p =>
+                jobj.Properties().Where(p => p.Name != Dollar && p.Name != Content && !p.Value.HasValues).Select(p =>
                     new XAttribute(FormatScalarPropertyName(p.Name), FormatScalarPropertyValue(p.Value.ToString()))),
+                // <attribute>scalarValue</attribute>
+                jobj.Properties().Where(p => p.Name == Content && !p.Value.HasValues).Select(p =>
+                    new XText(p.Value.ToString())),
                 // <attribute>complexValue</attribute>
                 jobj.Properties().Where(p => p.Name != Content && p.Value.HasValues).Select(p =>
                     new XElement(ns + FormatComplexPropertyName(p.Name, typeName),
@@ -121,8 +124,10 @@ namespace Alba.Jaml.XamlGeneration
                             GetXObject(o, GetPropertyItemType(objType, p.Name), GetPropertyType(objType, p.Name)))
                         )),
                 // Content TODO put into appropriate properties, default to ContPropAttr
-                jobj.Property(Content) == null ? null :
-                    jobj.Property(Content).Value.Cast<JObject>().Select(o => GetXObject(o, null, null))
+                jobj[Content] == null ? null :
+                    (jobj[Content].Type == JTokenType.Object ? new[] { (JObject)jobj[Content] } : jobj[Content].Cast<JObject>())
+                        //.GroupBy(o => o[Dollar] == null ? null : GetContentProperty)
+                        .Select(o => GetXObject(o, null, null))
                 );
             return xobj;
         }
@@ -152,7 +157,10 @@ namespace Alba.Jaml.XamlGeneration
 
         private Type GetTypeByName (string typeName)
         {
-            Type type = GetWpfTypeByName(PresentationCore, typeName) ?? GetWpfTypeByName(PresentationFramework, typeName);
+            Type type = GetWpfTypeByName(PresentationCore, typeName)
+                ?? GetWpfTypeByName(PresentationFramework, typeName)
+                    ?? GetWpfTypeByName(PresentationCore, typeName + "Extension")
+                        ?? GetWpfTypeByName(PresentationFramework, typeName + "Extension");
             if (type == null)
                 throw new InvalidOperationException(string.Format("Class {0} not found.", typeName));
             return type;
