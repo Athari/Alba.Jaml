@@ -4,23 +4,17 @@
     SnapsToDevicePixels: true, TextOptions$TextFormattingMode: "Display",
     Resources: [{
         $: "Style stybtnRed", TargetType: "Button",
-        _:[
-            { Background: "Red" }, { Foreground: "Blue" }
-        ]
+        _: { Background: "Red", Foreground: "Blue" }
     },{
         $: "Style stybtnGreen", TargetType: "Button",
-        _:[
-            { Background: "Green" }, { Foreground: "Yellow" }
-        ]
+        _: { Background: "Green", Foreground: "Yellow" }
     },{
         $: "DataTemplate String",
-        _:[{
+        _:{
             $: "TextBlock", Foreground: "Purple", FontWeight: "Bold", Text: "{=}"
-        }]
-    },{
-        $: "String IamGreenToo", _: "I'm green too!"
+        }
     }],
-    _:[{
+    _:{
         $: "Grid grdGrid", ToolTip: "Grid!",
         ColumnDefinitions: [ { Width: "Auto" }, { Width: "Auto" } ],
         RowDefinitions: [ { Height: "Auto" }, { Height: "Auto" }, { Height: "Auto" } ],
@@ -35,5 +29,5 @@
             $: "Button", Grid$: "1 1", Style: "{@stybtnGreen}",
             _: { $: "StaticResource", ResourceKey: "IamGreenToo" }
         }]
-    }]
+    }
 }
