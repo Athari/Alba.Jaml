@@ -39,18 +39,24 @@
                 Height="Auto" />
         </Grid.RowDefinitions>
         <Button
-            Grid.="0 0"
+            Grid.Row="0"
+            Grid.Column="1"
+            Grid.RowSpan="2"
+            Grid.ColumnSpan="3"
             Content="I'm red!"
             Style="{StaticResource stybtnRed}" />
         <Button
-            Grid.="0 1"
+            Grid.Row="0"
+            Grid.Column="1"
             Content="I'm green!"
             Style="{StaticResource stybtnGreen}" />
         <Button
-            Grid.="1 0"
+            Grid.Row="1"
+            Grid.Column="0"
             Style="{StaticResource stybtnRed}">I'm red too!</Button>
         <Button
-            Grid.="1 1"
+            Grid.Row="1"
+            Grid.Column="1"
             Style="{StaticResource stybtnGreen}">
             <StaticResource
                 ResourceKey="IamGreenToo" />

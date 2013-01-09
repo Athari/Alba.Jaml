@@ -19,7 +19,7 @@
         ColumnDefinitions: [ { Width: "Auto" }, { Width: "Auto" } ],
         RowDefinitions: [ { Height: "Auto" }, { Height: "Auto" }, { Height: "Auto" } ],
         _:[{
-            $: "Button", Grid$: "0 0", Content: "I'm red!", Style: "{@stybtnRed}"
+            $: "Button", Grid$: "0 1 2 3", Content: "I'm red!", Style: "{@stybtnRed}"
         },{
             $: "Button", Grid$: "0 1", Content: "I'm green!", Style: "{@stybtnGreen}"
         },{

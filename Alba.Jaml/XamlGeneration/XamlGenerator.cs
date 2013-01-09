@@ -8,16 +8,18 @@ using System.Windows;
 using System.Windows.Markup;
 using System.Xml;
 using System.Xml.Linq;
+using Alba.Jaml.XamlGeneration.PropertyShortcuts;
 using Newtonsoft.Json.Linq;
 
 namespace Alba.Jaml.XamlGeneration
 {
     public class XamlGenerator
     {
+        public static readonly XNamespace ns = XNamespace.Get("http://schemas.microsoft.com/winfx/2006/xaml/presentation");
+        public static readonly XNamespace nsX = XNamespace.Get("http://schemas.microsoft.com/winfx/2006/xaml");
+
         private const string pnDollar = "$";
         private const string pnContent = "_";
-        private static readonly XNamespace ns = XNamespace.Get("http://schemas.microsoft.com/winfx/2006/xaml/presentation");
-        private static readonly XNamespace nsX = XNamespace.Get("http://schemas.microsoft.com/winfx/2006/xaml");
         private static readonly Assembly PresentationCore = typeof(Visibility).Assembly;
         private static readonly Assembly PresentationFramework = typeof(Window).Assembly;
         private static readonly string[] WpfNameSpaces = new[] {
@@ -53,7 +55,7 @@ namespace Alba.Jaml.XamlGeneration
             "System.Windows.Shell",
         };
         private static readonly string[][] MarkupAliases = new[] {
-            new[] { "{@@", "{DynamicResource " },
+            new[] { "{@=", "{DynamicResource " },
             new[] { "{@", "{StaticResource " },
             new[] { "{=", "{Binding " },
         };
@@ -66,12 +68,17 @@ namespace Alba.Jaml.XamlGeneration
         private readonly string _nameSpace;
         private readonly string _className;
         private readonly Dictionary<JToken, TokenTypeInfo> _typeInfos = new Dictionary<JToken, TokenTypeInfo>();
+        private readonly List<IPropertyShortcut> PropertyShortcuts;
 
         public XamlGenerator (JObject data, string nameSpace, string className)
         {
             _data = data;
             _nameSpace = nameSpace;
             _className = className;
+            PropertyShortcuts = GetType().Assembly.GetTypes()
+                .Where(t => t.GetInterface(typeof(IPropertyShortcut).FullName) != null)
+                .Select(t => (IPropertyShortcut)Activator.CreateInstance(t))
+                .ToList();
         }
 
         public string GenerateXaml ()
@@ -117,12 +124,24 @@ namespace Alba.Jaml.XamlGeneration
             foreach (JProperty prop in jobj.Properties().Where(isProperty))
                 _typeInfos[prop] = new TokenTypeInfo(parentInfo.ItemType, prop.Name);
 
+            var shortPropNames = new List<string>();
+            var xAttrsShortProps = new List<XAttribute>();
+            foreach (JProperty prop in jobj.Properties()) {
+                IPropertyShortcut shortcut = PropertyShortcuts.FirstOrDefault(ps => ps.IsPropertySupported(prop));
+                if (shortcut != null) {
+                    shortPropNames.Add(prop.Name);
+                    xAttrsShortProps.AddRange(shortcut.GetAttributes(prop));
+                }
+            }
+            var allProps = jobj.Properties().Where(p => !shortPropNames.Contains(p.Name)).ToArray();
+
             return new XElement(ns + typeName,
                 GetXAttrObjectVisibility(jobj, visibility),
                 GetXAttrObjectName(parentInfo, objName),
-                jobj.Properties().Where(isScalarProperty).Select(GetXAttrScalarProperty).ToArray(),
-                jobj.Properties().Where(isScalarContentProperty).Select(GetXTextScalarPropertyContent).ToArray(),
-                jobj.Properties().Where(isComplexProperty).Select(GetXElementComplexObjectProperty).ToArray(),
+                xAttrsShortProps,
+                allProps.Where(isScalarProperty).Select(GetXAttrScalarProperty).ToArray(),
+                allProps.Where(isScalarContentProperty).Select(GetXTextScalarPropertyContent).ToArray(),
+                allProps.Where(isComplexProperty).Select(GetXElementComplexObjectProperty).ToArray(),
                 jcontent == null ? null : GetObjectOrEnum(jcontent).Select(GetXObject).ToArray()
                 );
         }
