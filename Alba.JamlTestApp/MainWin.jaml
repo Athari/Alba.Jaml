@@ -14,13 +14,13 @@
         ]
     },{
         $: "DataTemplate String",
-        _:{
+        _:[{
             $: "TextBlock", Foreground: "Purple", FontWeight: "Bold", Text: "{=}"
-        }
-    }/*,{
+        }]
+    },{
         $: "String IamGreenToo", _: "I'm green too!"
-    }*/],
-    _:{
+    }],
+    _:[{
         $: "Grid grdGrid", ToolTip: "Grid!",
         ColumnDefinitions: [ { Width: "Auto" }, { Width: "Auto" } ],
         RowDefinitions: [ { Height: "Auto" }, { Height: "Auto" }, { Height: "Auto" } ],
@@ -35,5 +35,5 @@
             $: "Button", Grid$: "1 1", Style: "{@stybtnGreen}",
             _: { $: "StaticResource", ResourceKey: "IamGreenToo" }
         }]
-    }
+    }]
 }
