@@ -5,12 +5,14 @@ using System.Reflection;
 using System.Linq;
 using System.Text;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Markup;
 using System.Xml;
 using System.Xml.Linq;
 using Alba.Jaml.XamlGeneration.PropertyShortcuts;
 using Newtonsoft.Json.Linq;
 
+// ReSharper disable MemberCanBePrivate.Local
 namespace Alba.Jaml.XamlGeneration
 {
     public class XamlGenerator
@@ -59,10 +61,16 @@ namespace Alba.Jaml.XamlGeneration
             new[] { "{@", "{StaticResource " },
             new[] { "{= ", "{Binding " },
             new[] { "{=", "{Binding" },
+            new[] { "{~", "{x:Type " },
         };
         private static readonly Dictionary<Type, Type> DefaultItemTypes = new Dictionary<Type, Type> {
             { typeof(SetterBase), typeof(Setter) },
             { typeof(TriggerBase), typeof(Trigger) },
+        };
+        // Some classes specify read-only props in DictionaryKeyPropertyAttribute
+        private static readonly Dictionary<Type, string> DictionaryKeyProps = new Dictionary<Type, string> {
+            { typeof(DataTemplate), "DataType" },
+            { typeof(ItemContainerTemplate), "DataType" },
         };
 
         private readonly JObject _data;
@@ -108,10 +116,11 @@ namespace Alba.Jaml.XamlGeneration
 
         private XElement GetXObject (JObject jobj)
         {
-            TokenTypeInfo parentInfo = GetTypeInfo(jobj.Parent);
-            string visibility, typeName, objName;
-            ParseDollarField((string)jobj[pnDollar], out visibility, out typeName, out objName);
-            typeName = EnsureObjectTypeName(parentInfo, typeName);
+            var parentInfo = GetTypeInfo(jobj.Parent);
+            var objInfo = new TokenTypeInfo { ObjType = parentInfo.ItemType, ContType = parentInfo.ItemContType };
+            string visibility, typeName, objId;
+            ParseDollarField((string)jobj[pnDollar], out visibility, out typeName, out objId);
+            typeName = EnsureObjectTypeName(objInfo, typeName);
             if (typeName == null)
                 return null;
 
@@ -121,9 +130,9 @@ namespace Alba.Jaml.XamlGeneration
             Func<JProperty, bool> isScalarContentProperty = p => p.Name == pnContent && !p.Value.HasValues;
             Func<JProperty, bool> isComplexProperty = p => p.Name != pnContent && p.Value.HasValues;
 
-            _typeInfos[jobj] = new TokenTypeInfo(parentInfo.ItemType, null);
+            _typeInfos[jobj] = objInfo;
             foreach (JProperty prop in jobj.Properties().Where(isProperty))
-                _typeInfos[prop] = new TokenTypeInfo(parentInfo.ItemType, prop.Name);
+                _typeInfos[prop] = new TokenTypeInfo { ObjType = objInfo.ObjType, PropName = prop.Name };
 
             var shortPropNames = new List<string>();
             var xAttrsShortProps = new List<XAttribute>();
@@ -138,7 +147,7 @@ namespace Alba.Jaml.XamlGeneration
 
             return new XElement(ns + typeName,
                 GetXAttrObjectVisibility(jobj, visibility),
-                GetXAttrObjectName(parentInfo, objName),
+                GetXAttrsObjectIds(objId, objInfo),
                 xAttrsShortProps,
                 allProps.Where(isScalarProperty).Select(GetXAttrScalarProperty).ToArray(),
                 allProps.Where(isScalarContentProperty).Select(GetXTextScalarPropertyContent).ToArray(),
@@ -147,15 +156,15 @@ namespace Alba.Jaml.XamlGeneration
                 );
         }
 
-        private string EnsureObjectTypeName (TokenTypeInfo parentInfo, string typeName)
+        private string EnsureObjectTypeName (TokenTypeInfo objInfo, string typeName)
         {
-            if (parentInfo.ItemType == null && typeName == null)
+            if (objInfo.ObjType == null && typeName == null)
                 //throw new InvalidOperationException("Object type not set." + jobj);
                 return null;
-            if (parentInfo.ItemType == null)
-                parentInfo.ItemType = GetTypeByName(typeName);
+            if (objInfo.ObjType == null)
+                objInfo.ObjType = GetTypeByName(typeName);
             else if (typeName == null)
-                typeName = parentInfo.ItemType.Name;
+                typeName = objInfo.ObjType.Name;
             return typeName;
         }
 
@@ -166,11 +175,45 @@ namespace Alba.Jaml.XamlGeneration
             return visibility == null ? null : new XAttribute(nsX + (isRoot ? "Class" : "Field") + "Modifier", visibility);
         }
 
-        private XAttribute GetXAttrObjectName (TokenTypeInfo parentInfo, string objName)
+        private IEnumerable<XAttribute> GetXAttrsObjectIds (string objId, TokenTypeInfo objInfo)
         {
-            // x:Name/x:Key="objName"
-            bool isContDict = parentInfo.ContType != null && IsTypeDictionary(parentInfo.ContType);
-            return objName == null ? null : new XAttribute(nsX + (isContDict ? "Key" : "Name"), objName);
+            // x:Name/x:Key="objIdExplicit" ImplicitKey="objKeyImplicit"
+            if (objId == null)
+                yield break;
+            string objIdExplicit = objId, objIdImplicit = null, propKey = GetObjectImplicitKeyPropName(objInfo);
+
+            if (propKey != null) {
+                int spacePos = objId.IndexOf(' ');
+                if (spacePos != -1) {
+                    objIdExplicit = objId.Substring(0, spacePos);
+                    objIdImplicit = objId.Substring(spacePos + 1);
+                }
+                else {
+                    objIdExplicit = null;
+                    objIdImplicit = objId;
+                }
+                Type propKeyType = GetPropertyType(objInfo.ObjType, propKey);
+                if (propKeyType == typeof(Type))
+                    objIdImplicit = string.Format("{{x:Type {0}}}", objIdImplicit);
+            }
+
+            bool isContDict = objInfo.ContType != null && IsTypeDictionary(objInfo.ContType);
+            if (objIdExplicit != null)
+                yield return new XAttribute(nsX + (isContDict ? "Key" : "Name"), objIdExplicit);
+            if (objIdImplicit != null)
+                yield return new XAttribute(propKey, FormatScalarPropertyValue(objIdImplicit));
+        }
+
+        private static string GetObjectImplicitKeyPropName (TokenTypeInfo objInfo)
+        {
+            if (DictionaryKeyProps.ContainsKey(objInfo.ObjType))
+                return DictionaryKeyProps[objInfo.ObjType];
+            else {
+                var attrDictKey = objInfo.ObjType.GetCustomAttributes<DictionaryKeyPropertyAttribute>().FirstOrDefault();
+                if (attrDictKey != null)
+                    return attrDictKey.Name;
+            }
+            return null;
         }
 
         private XAttribute GetXAttrScalarProperty (JProperty prop)
@@ -258,12 +301,12 @@ namespace Alba.Jaml.XamlGeneration
             return WpfNameSpaces.Select(space => assembly.GetType(string.Format("{0}.{1}", space, typeName))).FirstOrDefault(t => t != null);
         }
 
-        private static void ParseDollarField (string dollar, out string visibility, out string typeName, out string objName)
+        private static void ParseDollarField (string dollar, out string visibility, out string typeName, out string objId)
         {
             if (dollar == null) {
                 visibility = null;
                 typeName = null;
-                objName = null;
+                objId = null;
                 return;
             }
             visibility = null;
@@ -280,11 +323,11 @@ namespace Alba.Jaml.XamlGeneration
             int spacePos = dollar.IndexOf(' ');
             if (spacePos == -1) {
                 typeName = dollar;
-                objName = null;
+                objId = null;
             }
             else {
                 typeName = dollar.Substring(0, spacePos);
-                objName = dollar.Substring(spacePos + 1);
+                objId = dollar.Substring(spacePos + 1);
             }
         }
 
@@ -323,39 +366,36 @@ namespace Alba.Jaml.XamlGeneration
         private TokenTypeInfo GetTypeInfo (JToken token)
         {
             if (token == null)
-                return new TokenTypeInfo(null, null);
+                return new TokenTypeInfo();
             if (token.Type == JTokenType.Array)
                 token = token.Parent;
             TokenTypeInfo typeInfo;
             if (_typeInfos.TryGetValue(token, out typeInfo))
                 return typeInfo;
             else
-                return _typeInfos[token] = new TokenTypeInfo(null, null);
+                return _typeInfos[token] = new TokenTypeInfo();
         }
 
         private class TokenTypeInfo
         {
-            private readonly string _propName;
             private Type _itemType;
             private Type _contType;
 
-            public TokenTypeInfo (Type objType, string propName)
-            {
-                ObjType = objType;
-                _propName = propName;
-            }
+            public Type ObjType { get; set; }
 
-            public Type ObjType { get; private set; }
+            public Type ContType { get; set; }
+
+            public string PropName { get; set; }
 
             public Type ItemType
             {
-                get { return _itemType ?? (_itemType = ObjType == null ? null : GetPropertyItemType(ObjType, _propName)); }
+                get { return _itemType ?? (_itemType = ObjType == null ? null : GetPropertyItemType(ObjType, PropName)); }
                 set { _itemType = value; }
             }
 
-            public Type ContType
+            public Type ItemContType
             {
-                get { return _contType ?? (_contType = ObjType == null ? null : GetPropertyType(ObjType, _propName)); }
+                get { return _contType ?? (_contType = ObjType == null ? null : GetPropertyType(ObjType, PropName)); }
                 //set { _contType = value; }
             }
         }

@@ -3,13 +3,13 @@
     Title: "JamlMainWindow", Width: 500, Height: 300,
     SnapsToDevicePixels: true, TextOptions$TextFormattingMode: "Display",
     Resources: [{
-        $: "Style stybtnRed", TargetType: "Button",
+        $: "Style stybtnRed Button",
         _: { Background: "Red", Foreground: "Blue" }
     },{
-        $: "Style stybtnGreen", TargetType: "Button",
+        $: "Style stybtnGreen Button",
         _: { Background: "Green", Foreground: "Yellow" }
     },{
-        $: "DataTemplate String",
+        $: "DataTemplate {~Visibility}",
         _: {
             $: "TextBlock", Foreground: "Purple", FontWeight: "Bold", Text: "{=}",
             /*Visibility: "{= ${IsMouseOver} || ${IsMouseDirectlyOver} ? Visibility.Visible : Visibility.Hidden}",*/

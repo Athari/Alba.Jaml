@@ -9,12 +9,12 @@
     <Window.Resources>
         <Style
             x:Key="stybtnRed"
-            TargetType="Button" />
+            TargetType="{x:Type Button}" />
         <Style
             x:Key="stybtnGreen"
-            TargetType="Button" />
+            TargetType="{x:Type Button}" />
         <DataTemplate
-            x:Key="String">
+            DataType="{x:Type Visibility}">
             <TextBlock
                 Foreground="Purple"
                 FontWeight="Bold"
