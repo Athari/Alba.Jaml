@@ -227,12 +227,6 @@ namespace Alba.Jaml.XamlGeneration
             return null;
         }
 
-        private XAttribute GetXAttrScalarProperty (JProperty prop)
-        {
-            // attribute="scalarValue"
-            return new XAttribute(FormatScalarPropertyName(prop), FormatScalarPropertyValue(prop.Value.ToString()));
-        }
-
         private XText GetXTextScalarPropertyContent (JProperty prop)
         {
             // <attribute>scalarValue</attribute>
@@ -342,7 +336,7 @@ namespace Alba.Jaml.XamlGeneration
             }
         }
 
-        private string FormatScalarPropertyName (JProperty prop)
+        private static string FormatScalarPropertyName (JProperty prop)
         {
             return prop.Name.Replace('$', '.');
         }
