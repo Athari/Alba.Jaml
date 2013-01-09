@@ -12,9 +12,12 @@
         $: "DataTemplate {~Visibility}",
         _: {
             $: "TextBlock", Foreground: "Purple", FontWeight: "Bold", Text: "{=}",
-            /*Visibility: "{= ${IsMouseOver} || ${IsMouseDirectlyOver} ? Visibility.Visible : Visibility.Hidden}",*/
-            /*Visibility: "{= ${IsMouseOver} ? Visibility.Visible : Visibility.Hidden}",*/
+            /*Visibility: "{= ${=this.IsMouseOver} || ${=this.IsMouseDirectlyOver} ? Visibility.Visible : Visibility.Hidden}",*/
+            /*Visibility: "{= ${=this.IsMouseOver} ? Visibility.Visible : Visibility.Hidden}",*/
         }
+    }, {
+        $: "Visibility IamGreenToo",
+        _: "Visible"
     }],
     _:{
         $: "Grid grdGrid", ToolTip: "Grid!",

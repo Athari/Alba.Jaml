@@ -15,7 +15,7 @@ using Newtonsoft.Json.Linq;
 // ReSharper disable MemberCanBePrivate.Local
 namespace Alba.Jaml.XamlGeneration
 {
-    public class XamlGenerator
+    public partial class XamlGenerator
     {
         public static readonly XNamespace ns = XNamespace.Get("http://schemas.microsoft.com/winfx/2006/xaml/presentation");
         public static readonly XNamespace nsX = XNamespace.Get("http://schemas.microsoft.com/winfx/2006/xaml");
@@ -56,12 +56,23 @@ namespace Alba.Jaml.XamlGeneration
             "System.Windows.Shapes",
             "System.Windows.Shell",
         };
+        // Binding ElementName=controlName        {=ref.controlName.Path}
+        // Binding RelativeSource=Self            {=this.Path}
+        // Binding RelativeSource=TemplatedParent {=tpl.Path}
+        // Binding RelativeSource=AncestorType    {=~TypeName.Path}
+        // Binding Source=resource                {=@{@resource}.Path}
+        // StaticResource Key                     {@Key}
+        // DynamicResource Key                    {@=Key}
+        // x:Null                                 {null}
+        // x:Type                                 {~TypeName}
+        // x:Static                               {static.TypeName.Property}
         private static readonly string[][] MarkupAliases = new[] {
             new[] { "{@=", "{DynamicResource " },
             new[] { "{@", "{StaticResource " },
-            new[] { "{= ", "{Binding " },
-            new[] { "{=", "{Binding" },
+            new[] { "{=}", "{Binding}" },
             new[] { "{~", "{x:Type " },
+            new[] { "{static.", "{x:Static " },
+            new[] { "{null}", "{x:Null}" },
         };
         private static readonly Dictionary<Type, Type> DefaultItemTypes = new Dictionary<Type, Type> {
             { typeof(SetterBase), typeof(Setter) },
@@ -342,11 +353,6 @@ namespace Alba.Jaml.XamlGeneration
             return name.IndexOf('.') == -1 ? string.Format("{0}.{1}", GetTypeInfo(prop).ObjType.Name, name) : name;
         }
 
-        private static string FormatScalarPropertyValue (string value)
-        {
-            return MarkupAliases.Aggregate(value, (v, alias) => v.Replace(alias[0], alias[1]));
-        }
-
         private static Type GetGenericInterface (Type type, Type it)
         {
             return type.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == it);
@@ -390,7 +396,7 @@ namespace Alba.Jaml.XamlGeneration
             public Type ItemType
             {
                 get { return _itemType ?? (_itemType = ObjType == null ? null : GetPropertyItemType(ObjType, PropName)); }
-                set { _itemType = value; }
+                //set { _itemType = value; }
             }
 
             public Type ItemContType

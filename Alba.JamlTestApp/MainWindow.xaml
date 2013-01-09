@@ -17,7 +17,7 @@
             <DataTemplate DataType="system:String">
                 <TextBlock Foreground="Purple" FontWeight="Bold" Text="{Binding}"/>
             </DataTemplate>
-            <system:String x:Key="IamGreenToo">I'm green too!</system:String>
+            <Visibility x:Key="IamGreenToo">Visible</Visibility>
         </ResourceDictionary>
     </Window.Resources>
     <Grid x:Name="grdButtons" ToolTip="Grid!">

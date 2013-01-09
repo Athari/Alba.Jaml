@@ -50,6 +50,7 @@
     <Compile Include="XamlGeneration\PropertyShortcuts\GridPropertyShortcut.cs" />
     <Compile Include="XamlGeneration\PropertyShortcuts\IPropertyShortcut.cs" />
     <Compile Include="XamlGeneration\XamlGenerator.cs" />
+    <Compile Include="XamlGeneration\XamlGenerator.ScalarValues.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

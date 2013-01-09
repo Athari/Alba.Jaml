@@ -20,6 +20,8 @@
                 FontWeight="Bold"
                 Text="{Binding}" />
         </DataTemplate>
+        <Visibility
+            x:Key="IamGreenToo">Visible</Visibility>
     </Window.Resources>
     <Grid
         x:Name="grdGrid"
