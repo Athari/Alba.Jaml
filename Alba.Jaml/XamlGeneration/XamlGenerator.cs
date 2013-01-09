@@ -57,7 +57,8 @@ namespace Alba.Jaml.XamlGeneration
         private static readonly string[][] MarkupAliases = new[] {
             new[] { "{@=", "{DynamicResource " },
             new[] { "{@", "{StaticResource " },
-            new[] { "{=", "{Binding " },
+            new[] { "{= ", "{Binding " },
+            new[] { "{=", "{Binding" },
         };
         private static readonly Dictionary<Type, Type> DefaultItemTypes = new Dictionary<Type, Type> {
             { typeof(SetterBase), typeof(Setter) },
@@ -355,7 +356,7 @@ namespace Alba.Jaml.XamlGeneration
             public Type ContType
             {
                 get { return _contType ?? (_contType = ObjType == null ? null : GetPropertyType(ObjType, _propName)); }
-                set { _contType = value; }
+                //set { _contType = value; }
             }
         }
     }

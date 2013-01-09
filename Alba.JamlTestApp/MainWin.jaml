@@ -10,8 +10,10 @@
         _: { Background: "Green", Foreground: "Yellow" }
     },{
         $: "DataTemplate String",
-        _:{
-            $: "TextBlock", Foreground: "Purple", FontWeight: "Bold", Text: "{=}"
+        _: {
+            $: "TextBlock", Foreground: "Purple", FontWeight: "Bold", Text: "{=}",
+            /*Visibility: "{= ${IsMouseOver} || ${IsMouseDirectlyOver} ? Visibility.Visible : Visibility.Hidden}",*/
+            /*Visibility: "{= ${IsMouseOver} ? Visibility.Visible : Visibility.Hidden}",*/
         }
     }],
     _:{
@@ -19,7 +21,7 @@
         ColumnDefinitions: [ { Width: "Auto" }, { Width: "Auto" } ],
         RowDefinitions: [ { Height: "Auto" }, { Height: "Auto" }, { Height: "Auto" } ],
         _:[{
-            $: "Button", Grid$: "0 1 2 3", Content: "I'm red!", Style: "{@stybtnRed}"
+            $: "Button", Grid$: "0 0", Content: "I'm red!", Style: "{@stybtnRed}"
         },{
             $: "Button", Grid$: "0 1", Content: "I'm green!", Style: "{@stybtnGreen}"
         },{

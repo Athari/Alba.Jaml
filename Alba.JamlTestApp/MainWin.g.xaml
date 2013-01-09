@@ -18,7 +18,7 @@
             <TextBlock
                 Foreground="Purple"
                 FontWeight="Bold"
-                Text="{Binding }" />
+                Text="{Binding}" />
         </DataTemplate>
     </Window.Resources>
     <Grid
@@ -40,9 +40,7 @@
         </Grid.RowDefinitions>
         <Button
             Grid.Row="0"
-            Grid.Column="1"
-            Grid.RowSpan="2"
-            Grid.ColumnSpan="3"
+            Grid.Column="0"
             Content="I'm red!"
             Style="{StaticResource stybtnRed}" />
         <Button
