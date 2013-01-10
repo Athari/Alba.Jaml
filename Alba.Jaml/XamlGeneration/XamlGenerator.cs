@@ -60,7 +60,8 @@ namespace Alba.Jaml.XamlGeneration
         // Binding RelativeSource=Self            {=this.Path}
         // Binding RelativeSource=TemplatedParent {=tpl.Path}
         // Binding RelativeSource=AncestorType    {=~TypeName.Path}
-        // Binding Source=resource                {=@{@resource}.Path}
+        // Binding Source=resource                {=@{static.TypeName.Property}.Path}
+        // TemplateBinding                        {=@{@resource}.Path}
         // StaticResource Key                     {@Key}
         // DynamicResource Key                    {@=Key}
         // x:Null                                 {null}
