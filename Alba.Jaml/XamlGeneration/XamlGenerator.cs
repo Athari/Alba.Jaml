@@ -72,6 +72,9 @@ namespace Alba.Jaml.XamlGeneration
             if (ctx.TypeName == null)
                 return null;
 
+            var xAttrVisibility = GetXAttrObjectVisibility(jobj, ctx.Visibility);
+            var xAttrsIds = GetXAttrsObjectIds(ctx.ObjId, ctx.TypeInfo).ToArray();
+
             if (ctx.TypeInfo.Type == typeof(Style))
                 ProcessStyleObject(ctx);
 
@@ -80,8 +83,8 @@ namespace Alba.Jaml.XamlGeneration
             var xAttrsShortProps = GetXAttrsShortProps(jobj, allProps);
 
             return new XElement(Ns + ctx.TypeName,
-                GetXAttrObjectVisibility(jobj, ctx.Visibility),
-                GetXAttrsObjectIds(ctx.ObjId, ctx.TypeInfo),
+                xAttrVisibility,
+                xAttrsIds,
                 xAttrsShortProps,
                 allProps.Where(IsScalarProperty).Select(GetXAttrScalarProperty).ToArray(),
                 allProps.Where(IsScalarContentProperty).Select(GetXTextScalarPropertyContent).ToArray(),
@@ -107,9 +110,13 @@ namespace Alba.Jaml.XamlGeneration
 
         private void AssignPropertyTypeInfos (JObject jobj, ObjectContext ctx)
         {
-            _typeInfos[jobj] = ctx.TypeInfo;
-            foreach (JProperty prop in jobj.Properties().Where(IsProperty))
-                _typeInfos[prop] = new TokenTypeInfo { Type = ctx.TypeInfo.Type, PropName = prop.Name };
+            foreach (JProperty prop in jobj.Properties().Where(IsProperty)) {
+                TokenTypeInfo typeInfo = GetTypeInfo(prop);
+                if (typeInfo.Type == null)
+                    typeInfo.Type = ctx.TypeInfo.Type;
+                if (typeInfo.PropName == null)
+                    typeInfo.PropName = prop.Name;
+            }
         }
 
         private XAttribute GetXAttrObjectVisibility (JObject jobj, string visibility)
@@ -124,7 +131,7 @@ namespace Alba.Jaml.XamlGeneration
             // x:Name/x:Key="objIdExplicit" ImplicitKey="objKeyImplicit"
             if (objId == null)
                 yield break;
-            string objIdExplicit = objId, objIdImplicit = null, propKey = GetObjectImplicitKeyPropName(objInfo);
+            string objIdExplicit = objId, objIdImplicit = null, propKey = GetObjectImplicitKeyPropName(objInfo), typeName = null;
 
             if (propKey != null) {
                 int spacePos = objId.IndexOf(' ');
@@ -137,9 +144,14 @@ namespace Alba.Jaml.XamlGeneration
                     objIdImplicit = objId;
                 }
                 Type propKeyType = GetPropertyType(objInfo.Type, propKey);
-                if (propKeyType == typeof(Type))
+                if (propKeyType == typeof(Type)) {
+                    typeName = objIdImplicit;
                     objIdImplicit = String.Format("{{x:Type {0}}}", objIdImplicit);
+                }
             }
+
+            if (typeName != null)
+                objInfo.ForType = GetTypeByName(typeName);
 
             bool isContDict = objInfo.ContType != null && IsTypeDictionary(objInfo.ContType);
             if (objIdExplicit != null)
@@ -168,9 +180,9 @@ namespace Alba.Jaml.XamlGeneration
 
         private XElement GetXElementComplexObjectProperty (JProperty prop)
         {
-            // <attribute><complexValue/></attribute> TODO Single <complexValue/>?
+            // <attribute><complexValue/></attribute>
             return new XElement(Ns + FormatComplexPropertyName(prop),
-                prop.Value.OfType<JObject>().Select(GetXObject)
+                GetObjectOrEnum(prop.Value).Select(GetXObject)
                 );
         }
 
@@ -186,7 +198,7 @@ namespace Alba.Jaml.XamlGeneration
             return new Tuple<string, Type, Type>(attrContProp.Name, itemType, contType);
         }
 
-        private static Type GetPropertyItemType (Type objType, string propName)
+        private Type GetPropertyItemType (Type objType, string propName)
         {
             Type propType = GetPropertyType(objType, propName);
             Type enumType = GetGenericInterface(propType, typeof(IEnumerable<>));
@@ -208,11 +220,17 @@ namespace Alba.Jaml.XamlGeneration
             return propType;
         }
 
-        private static Type GetPropertyType (Type objType, string propName)
+        private Type GetPropertyType (Type objType, string propName)
         {
+            // attached property
+            int dotPos = propName.IndexOf('.');
+            if (dotPos != -1)
+                return GetPropertyType(GetTypeByName(propName.Substring(0, dotPos)), propName.Substring(dotPos + 1));
+            // simple property
             PropertyInfo prop = objType.GetProperty(propName);
             if (prop != null)
                 return prop.PropertyType;
+            // dependency property
             FieldInfo dfield = objType.GetField(propName + "Property", BindingFlags.Static | BindingFlags.Public);
             if (dfield != null) {
                 var dprop = dfield.GetValue(null) as DependencyProperty;
@@ -277,7 +295,7 @@ namespace Alba.Jaml.XamlGeneration
         private string FormatComplexPropertyName (JProperty prop)
         {
             string name = FormatScalarPropertyName(prop);
-            return name.IndexOf('.') == -1 ? String.Format("{0}.{1}", GetTypeInfo(prop).Type.Name, name) : name;
+            return name.IndexOf('.') == -1 ? string.Format("{0}.{1}", GetTypeInfo(prop).Type.Name, name) : name;
         }
 
         private static Type GetGenericInterface (Type type, Type it)
@@ -319,33 +337,41 @@ namespace Alba.Jaml.XamlGeneration
         private TokenTypeInfo GetTypeInfo (JToken token)
         {
             if (token == null)
-                return new TokenTypeInfo();
+                return new TokenTypeInfo(this);
             if (token.Type == JTokenType.Array)
                 token = token.Parent;
             TokenTypeInfo typeInfo;
             if (_typeInfos.TryGetValue(token, out typeInfo))
                 return typeInfo;
             else
-                return _typeInfos[token] = new TokenTypeInfo();
+                return _typeInfos[token] = new TokenTypeInfo(this);
         }
 
         private class TokenTypeInfo
         {
+            private readonly XamlGenerator _generator;
             private Type _itemType;
             private Type _contType;
 
+            public TokenTypeInfo (XamlGenerator generator)
+            {
+                _generator = generator;
+            }
+
             public Type Type { get; set; }
             public Type ContType { get; set; }
+            public Type ForType { get; set; }
             public string PropName { get; set; }
 
             public Type ItemType
             {
-                get { return _itemType ?? (_itemType = Type == null ? null : GetPropertyItemType(Type, PropName)); }
+                get { return Type == null ? null : _itemType ?? (_itemType = _generator.GetPropertyItemType(Type, PropName)); }
+                set { _itemType = value; }
             }
 
             public Type ItemContType
             {
-                get { return _contType ?? (_contType = Type == null ? null : GetPropertyType(Type, PropName)); }
+                get { return Type == null ? null : _contType ?? (_contType = _generator.GetPropertyType(Type, PropName)); }
             }
         }
 
@@ -356,7 +382,11 @@ namespace Alba.Jaml.XamlGeneration
                 JObj = jobj;
 
                 TokenTypeInfo parentInfo = generator.GetTypeInfo(JObj.Parent);
-                TypeInfo = new TokenTypeInfo { Type = parentInfo.ItemType, ContType = parentInfo.ItemContType };
+                TypeInfo = generator.GetTypeInfo(JObj);
+                if (TypeInfo.Type == null)
+                    TypeInfo.Type = parentInfo.ItemType;
+                if (TypeInfo.ContType == null)
+                    TypeInfo.ContType = parentInfo.ItemContType;
 
                 string visibility, typeName, objId;
                 ParseDollarField((string)JObj[pnDollar], out visibility, out typeName, out objId);

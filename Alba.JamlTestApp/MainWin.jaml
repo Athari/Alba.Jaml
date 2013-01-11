@@ -5,14 +5,21 @@
     Resources: [{
         $: "Style stybtnRed Button",
         set: {
+            Template: {
+                TargetType: "Button",
+                _: [
+                    { $: "StackPanel" }
+                ]
+            },
             ref$ctlName$Background: "Red",
             Foreground: "Blue",
             Content: null,
-            TextOptions$TextFormattingMode: "Display"
+            TextOptions$TextFormattingMode: "Display",
         },
-        on: [
-            { }
-        ]
+        on: {
+            "" : {
+            }
+        }
     },{
         $: "Style stybtnGreen Button",
         set: { Background: "Green", Foreground: "Yellow" }

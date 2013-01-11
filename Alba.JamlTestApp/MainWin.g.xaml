@@ -11,6 +11,15 @@
             x:Key="stybtnRed"
             TargetType="{x:Type Button}">
             <Setter
+                Property="Template">
+                <Setter.Value>
+                    <ControlTemplate
+                        TargetType="Button">
+                        <StackPanel />
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Setter
                 TargetName="ctlName"
                 Property="Background"
                 Value="Red" />
