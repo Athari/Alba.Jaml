@@ -11,6 +11,9 @@ using System.Xml.Linq;
 using Alba.Jaml.XamlGeneration.PropertyShortcuts;
 using Newtonsoft.Json.Linq;
 
+// TODO TargetType autodection for Style[Targetype=Button].Setter.Value.Template
+// TODO Replace HasValues check with type check
+
 // ReSharper disable MemberCanBePrivate.Local
 namespace Alba.Jaml.XamlGeneration
 {
@@ -93,6 +96,9 @@ namespace Alba.Jaml.XamlGeneration
                 );
         }
 
+        /// <summary>Get XAttributes returned by implementations of IPropertyShortcut.</summary>
+        /// <param name="jobj">Processed object.</param>
+        /// <param name="allProps">[out] All properties except processed by shortcuts.</param>
         private List<XAttribute> GetXAttrsShortProps (JObject jobj, List<JProperty> allProps)
         {
             var shortPropNames = new List<string>();
@@ -108,27 +114,28 @@ namespace Alba.Jaml.XamlGeneration
             return xAttrsShortProps;
         }
 
+        /// <summary>Assign real type information for object properties.</summary>
         private void AssignPropertyTypeInfos (JObject jobj, ObjectContext ctx)
         {
             foreach (JProperty prop in jobj.Properties().Where(IsProperty)) {
                 TokenTypeInfo typeInfo = GetTypeInfo(prop);
                 if (typeInfo.Type == null)
                     typeInfo.Type = ctx.TypeInfo.Type;
-                if (typeInfo.PropName == null)
-                    typeInfo.PropName = prop.Name;
+                if (typeInfo.PropertyName == null)
+                    typeInfo.PropertyName = prop.Name;
             }
         }
 
+        /// <summary>Get XAttribute for visibility modifier: x:ClassModifier/x:FieldModifier="visibility".</summary>
         private XAttribute GetXAttrObjectVisibility (JObject jobj, string visibility)
         {
-            // x:ClassModifier/x:FieldModifier="visibility"
             bool isRoot = jobj.Parent == null;
             return visibility == null ? null : new XAttribute(NsX + (isRoot ? "Class" : "Field") + "Modifier", visibility);
         }
 
+        /// <summary>Get XAttributes for object identifiers: x:Name/x:Key="objIdExplicit" ImplicitKey="objKeyImplicit".</summary>
         private IEnumerable<XAttribute> GetXAttrsObjectIds (string objId, TokenTypeInfo objInfo)
         {
-            // x:Name/x:Key="objIdExplicit" ImplicitKey="objKeyImplicit"
             if (objId == null)
                 yield break;
             string objIdExplicit = objId, objIdImplicit = null, propKey = GetObjectImplicitKeyPropName(objInfo), typeName = null;
@@ -151,15 +158,16 @@ namespace Alba.Jaml.XamlGeneration
             }
 
             if (typeName != null)
-                objInfo.ForType = GetTypeByName(typeName);
+                objInfo.TargetType = GetTypeByName(typeName);
 
-            bool isContDict = objInfo.ContType != null && IsTypeDictionary(objInfo.ContType);
+            bool isContDict = objInfo.PropertyContainerType != null && IsTypeDictionary(objInfo.PropertyContainerType);
             if (objIdExplicit != null)
                 yield return new XAttribute(NsX + (isContDict ? "Key" : "Name"), objIdExplicit);
             if (objIdImplicit != null)
                 yield return new XAttribute(propKey, FormatScalarPropertyValue(objIdImplicit));
         }
 
+        /// <summary>Get implicit key property name: TargetType for Style, DataType for DataTemplate etc.</summary>
         private static string GetObjectImplicitKeyPropName (TokenTypeInfo objInfo)
         {
             if (DictionaryKeyProps.ContainsKey(objInfo.Type))
@@ -172,15 +180,15 @@ namespace Alba.Jaml.XamlGeneration
             return null;
         }
 
+        /// <summary>Get XText for scalar properties: &lt;attribute&gt;scalarValue&lt;/attribute&gt;.</summary>
         private XText GetXTextScalarPropertyContent (JProperty prop)
         {
-            // <attribute>scalarValue</attribute>
             return new XText(prop.Value.ToString());
         }
 
+        /// <summary>Get XElement for complex properties: &lt;attribute&gt;&lt;complexValue/&gt;&lt;/attribute&gt;.</summary>
         private XElement GetXElementComplexObjectProperty (JProperty prop)
         {
-            // <attribute><complexValue/></attribute>
             return new XElement(Ns + FormatComplexPropertyName(prop),
                 GetObjectOrEnum(prop.Value).Select(GetXObject)
                 );
@@ -198,6 +206,8 @@ namespace Alba.Jaml.XamlGeneration
             return new Tuple<string, Type, Type>(attrContProp.Name, itemType, contType);
         }
 
+        /// <summary>Get types of objects contained in property: type of property for simple property,
+        /// T for IEnumerable, TValue for IDictionary.</summary>
         private Type GetPropertyItemType (Type objType, string propName)
         {
             Type propType = GetPropertyType(objType, propName);
@@ -220,16 +230,19 @@ namespace Alba.Jaml.XamlGeneration
             return propType;
         }
 
+        /// <summary>Get property type by object type and property name. Supports simple, dependency and attached properties.</summary>
         private Type GetPropertyType (Type objType, string propName)
         {
             // attached property
             int dotPos = propName.IndexOf('.');
             if (dotPos != -1)
                 return GetPropertyType(GetTypeByName(propName.Substring(0, dotPos)), propName.Substring(dotPos + 1));
+
             // simple property
             PropertyInfo prop = objType.GetProperty(propName);
             if (prop != null)
                 return prop.PropertyType;
+
             // dependency property
             FieldInfo dfield = objType.GetField(propName + "Property", BindingFlags.Static | BindingFlags.Public);
             if (dfield != null) {
@@ -347,6 +360,7 @@ namespace Alba.Jaml.XamlGeneration
                 return _typeInfos[token] = new TokenTypeInfo(this);
         }
 
+        /// <summary>Real type info for JTokens.</summary>
         private class TokenTypeInfo
         {
             private readonly XamlGenerator _generator;
@@ -358,23 +372,28 @@ namespace Alba.Jaml.XamlGeneration
                 _generator = generator;
             }
 
+            /// <summary>For objects: type of the object; for properties: type of the container object.</summary>
             public Type Type { get; set; }
-            public Type ContType { get; set; }
-            public Type ForType { get; set; }
-            public string PropName { get; set; }
-
-            public Type ItemType
+            /// <summary>For objects: contained within collection of type.</summary>
+            public Type PropertyContainerType { get; set; }
+            /// <summary>For types with implicit keys (styles, templates): TargetType.</summary>
+            public Type TargetType { get; set; }
+            /// <summary>For properties: name of the property.</summary>
+            public string PropertyName { get; set; }
+            /// <summary>For properties: contains items of type (usually item.parent.PropertyItemType == item.Type).</summary>
+            public Type PropertyItemType
             {
-                get { return Type == null ? null : _itemType ?? (_itemType = _generator.GetPropertyItemType(Type, PropName)); }
+                get { return Type == null ? null : _itemType ?? (_itemType = _generator.GetPropertyItemType(Type, PropertyName)); }
                 set { _itemType = value; }
             }
-
-            public Type ItemContType
+            /// <summary>For properties: type of property (usually item.parent.PropertyType == item.PropertyContainerType).</summary>
+            public Type PropertyType
             {
-                get { return Type == null ? null : _contType ?? (_contType = _generator.GetPropertyType(Type, PropName)); }
+                get { return Type == null ? null : _contType ?? (_contType = _generator.GetPropertyType(Type, PropertyName)); }
             }
         }
 
+        /// <summary>Context for JObject processing.</summary>
         private class ObjectContext
         {
             public ObjectContext (XamlGenerator generator, JObject jobj)
@@ -384,9 +403,9 @@ namespace Alba.Jaml.XamlGeneration
                 TokenTypeInfo parentInfo = generator.GetTypeInfo(JObj.Parent);
                 TypeInfo = generator.GetTypeInfo(JObj);
                 if (TypeInfo.Type == null)
-                    TypeInfo.Type = parentInfo.ItemType;
-                if (TypeInfo.ContType == null)
-                    TypeInfo.ContType = parentInfo.ItemContType;
+                    TypeInfo.Type = parentInfo.PropertyItemType;
+                if (TypeInfo.PropertyContainerType == null)
+                    TypeInfo.PropertyContainerType = parentInfo.PropertyType;
 
                 string visibility, typeName, objId;
                 ParseDollarField((string)JObj[pnDollar], out visibility, out typeName, out objId);
@@ -401,12 +420,17 @@ namespace Alba.Jaml.XamlGeneration
                 }
             }
 
+            /// <summary>Context is for this JObject.</summary>
             public JObject JObj { get; private set; }
+            /// <summary>Object identifier: x:Key or x:Name.</summary>
             public string ObjId { get; private set; }
+            /// <summary>Real type information for object.</summary>
             public TokenTypeInfo TypeInfo { get; private set; }
+            /// <summary>Visibility modifier for object: x:ClassModifier or x:FieldModifier.</summary>
             public string Visibility { get; private set; }
+            /// <summary>Short type name of object.</summary>
             public string TypeName { get; private set; }
-
+            /// <summary>Value of content property of object.</summary>
             public JToken JContent
             {
                 get { return JObj[pnContent]; }

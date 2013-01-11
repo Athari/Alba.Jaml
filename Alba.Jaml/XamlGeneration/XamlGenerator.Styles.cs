@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
-using System.Windows;
 using Newtonsoft.Json.Linq;
 
 namespace Alba.Jaml.XamlGeneration
@@ -20,13 +19,13 @@ namespace Alba.Jaml.XamlGeneration
             if (jobj[pnSet] != null) {
                 if (jobj[pnContent] == null)
                     jobj[pnContent] = new JArray();
-                var jsetters = ((JObject)jobj[pnSet]).Properties().Select(p => GetJObjectStyleSetter(jobj, p)).ToArray();
+                var jsetters = ((JObject)jobj[pnSet]).Properties().Select(GetJObjectStyleSetter).ToArray();
                 ((JContainer)jobj[pnContent]).Add(jsetters);
 
-                Type targetType = GetTypeInfo(jobj).ForType;
+                Type targetType = GetTypeInfo(jobj).TargetType;
                 foreach (JObject jsetter in jobj[pnContent]) {
                     TokenTypeInfo valueTypeInfo = GetTypeInfo(jsetter.Property("Value"));
-                    valueTypeInfo.ItemType = GetPropertyItemType(targetType, (string)jsetter["Property"]);
+                    valueTypeInfo.PropertyItemType = GetPropertyItemType(targetType, (string)jsetter["Property"]);
                 }
                 jobj.Remove(pnSet);
             }
@@ -37,8 +36,10 @@ namespace Alba.Jaml.XamlGeneration
             }
         }
 
-        private JObject GetJObjectStyleSetter (JObject jobjStyle, JProperty prop)
+        /// <summary>Convert JProperty to JObject style setter: &lt;Setter TargetName="targetName" Property="propName" Value="prop.Value"/&gt;.</summary>
+        private JObject GetJObjectStyleSetter (JProperty prop)
         {
+            // check for presence of ref.elementName
             string targetName = null, propName = FormatScalarPropertyName(prop);
             Match mWithTarget = ReSetterWithTarget.Match(propName);
             if (mWithTarget.Success) {
@@ -46,7 +47,7 @@ namespace Alba.Jaml.XamlGeneration
                 propName = mWithTarget.Groups["PropName"].Value;
             }
 
-            // <Setter TargetName="targetName" Property="propName" Value="prop.Value" />
+            // create JObject setter
             var jsetter = new JObject(new JProperty(pnDollar, "Setter"));
             if (targetName != null)
                 jsetter.Add(new JProperty("TargetName", targetName));

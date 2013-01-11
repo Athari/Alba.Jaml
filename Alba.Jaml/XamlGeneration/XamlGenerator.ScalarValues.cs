@@ -9,41 +9,55 @@ namespace Alba.Jaml.XamlGeneration
 {
     public partial class XamlGenerator
     {
+        /// <summary>Regex part: C# identifier.</summary>
         private const string ReIdent = @"[_\p{Lu}\p{Ll}\p{Lt}\p{Lm}\p{Lo}\p{Nl}][\p{Lu}\p{Ll}\p{Lt}\p{Lm}\p{Lo}\p{Nl}\p{Mn}\p{Mc}\p{Nd}\p{Pc}\p{Cf}]*";
+        /// <summary>Regex part: match only properly paired curly brackets.</summary>
         private const string ReCurlyBracesContents = @"
             (
                 [^\{\}] | (?<paren>\{) | (?<-paren>\})
             )+
             (?(paren)(?!))";
+        /// <summary>Regex part: match expression in curly brackets, with brackets properly paired.</summary>
         private const string ReInCurlyBraces = @"\{" + ReCurlyBracesContents + @"\}";
+        /// <summary>Regex part: binding path.</summary>
         private const string ReOptionalPropPath = @"(  \.  (?<Path>[^,\}]+)  )?";
-        private const string StrExpressionSuffix = "${}";
+        /// <summary>Regex part: postfix in case of converter expression with commas after last sub-binding.</summary>
+        private const string StrExpressionPostfix = "${}";
+
         private const RegexOptions DefaultReOptions = RegexOptions.Singleline | RegexOptions.ExplicitCapture | RegexOptions.IgnorePatternWhitespace;
+        /// <summary>Examples: {=ref.elementName.PropertyPath}, {=ref.elementName}.</summary>
         private static readonly Regex ReBindingElementName = new Regex(
             @"^  \{=\s*  ref\.  (?<ElementName>" + ReIdent + @")  " + ReOptionalPropPath,
             DefaultReOptions);
+        /// <summary>Examples: {=self.PropertyPath}, {=self}.</summary>
         private static readonly Regex ReBindingSelf = new Regex(
             @"^  \{=\s*  this  " + ReOptionalPropPath,
             DefaultReOptions);
+        /// <summary>Examples: {=tpl.PropertyPath}, {=tpl}.</summary>
         private static readonly Regex ReBindingTemplatedParent = new Regex(
             @"^  \{=\s*  tpl  " + ReOptionalPropPath,
             DefaultReOptions);
+        /// <summary>Examples: {=~AncestorType.PropertyPath}, {=~AncestorType}.</summary>
         private static readonly Regex ReBindingAncestorType = new Regex(
             @"^  \{=\s*  ~  (?<AncestorType>[^,\.\}]+)  " + ReOptionalPropPath,
             DefaultReOptions);
+        /// <summary>Examples: {=@{source}.PropertyPath}, {=@{source}}.</summary>
         private static readonly Regex ReBindingSource = new Regex(
             @"^  \{=\s*  @  (?<Source>" + ReInCurlyBraces + @")  " + ReOptionalPropPath,
             DefaultReOptions);
+        /// <summary>Example: {=...}.</summary>
         private static readonly Regex ReGenericBinding = new Regex(
             @"^  \{=\s*  (?<Expression>" + ReCurlyBracesContents + @")  \s*\}  $",
             DefaultReOptions);
+        /// <summary>Match sub-cinding in curly braces, match after until either another sub-binding,
+        /// or end of string, or comma (if ${} postfix is not present).</summary>
         private static readonly Regex ReSubBinding = new Regex(
             @"  \$  (?<SubBinding>" + ReInCurlyBraces + @")  (?<Between>.*?)  (?= \$\{ | $ | ,(?!.*\$\{\}) )",
             DefaultReOptions);
 
+        /// <summary>Get XAttribute for scalar property: attribute="scalarValue" (can also return object if value is multi-binding).</summary>
         private object GetXAttrScalarProperty (JProperty prop)
         {
-            // attribute="scalarValue"
             if (prop.Value.Type == JTokenType.String && prop.Value.ToString().StartsWith("{="))
                 return GetXBindingPropertyValue(prop);
             else
