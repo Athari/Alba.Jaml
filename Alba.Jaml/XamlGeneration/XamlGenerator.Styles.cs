@@ -6,6 +6,7 @@ namespace Alba.Jaml.XamlGeneration
 {
     public partial class XamlGenerator
     {
+        private const string pnSet = "set";
         private const string pnOn = "on";
         private static readonly Regex ReSetterWithTarget = new Regex(
             @"^  ref\.  (?<TargetName>" + ReIdent + @")  \.  (?<PropName>.+)  $",
@@ -13,11 +14,18 @@ namespace Alba.Jaml.XamlGeneration
 
         private void ProcessStyleObject (ObjectContext ctx)
         {
-            if (ctx.JContent != null)
-                ctx.JObj[pnContent] = new JArray(((JObject)ctx.JContent).Properties().Select(GetJObjectStyleSetter));
-            //if (ctx.JObj[pnOn] != null) {
-            ctx.JObj.Remove(pnOn);
-            //}
+            var jobj = ctx.JObj;
+            if (jobj[pnSet] != null) {
+                if (jobj[pnContent] == null)
+                    jobj[pnContent] = new JArray();
+                ((JContainer)jobj[pnContent]).Add(((JObject)jobj[pnSet]).Properties().Select(GetJObjectStyleSetter));
+                jobj.Remove(pnSet);
+            }
+            if (jobj[pnOn] != null) {
+                // TODO Add style triggers
+                //jobj["Triggers"] = new JArray(((JObject)ctx.JContent).Properties().Select(GetJObjectStyleSetter));
+                jobj.Remove(pnOn);
+            }
         }
 
         private JObject GetJObjectStyleSetter (JProperty prop)

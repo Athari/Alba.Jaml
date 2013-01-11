@@ -4,13 +4,13 @@
     SnapsToDevicePixels: true, TextOptions$TextFormattingMode: "Display",
     Resources: [{
         $: "Style stybtnRed Button",
-        _: { Background: "Red", Foreground: "Blue", Content: null },
+        set: { Background: "Red", Foreground: "Blue", Content: null },
         on: [
             { }
         ]
     },{
         $: "Style stybtnGreen Button",
-        _: { Background: "Green", Foreground: "Yellow" }
+        set: { Background: "Green", Foreground: "Yellow" }
     },{
         $: "DataTemplate {~Visibility}",
         _: {
