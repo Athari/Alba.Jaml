@@ -66,12 +66,12 @@ namespace Alba.Jaml.XamlGeneration
             if (ctx.TypeName == null)
                 return null;
 
+            if (ctx.TypeInfo.Type == typeof(Style))
+                ProcessStyleObject(ctx);
+
             AssignPropertyTypeInfos(jobj, ctx);
             var allProps = new List<JProperty>();
             var xAttrsShortProps = GetXAttrsShortProps(jobj, allProps);
-
-            if (ctx.TypeInfo.Type == typeof(Style))
-                return GetXElementStyle(ctx);
 
             return new XElement(Ns + ctx.TypeName,
                 GetXAttrObjectVisibility(jobj, ctx.Visibility),
@@ -290,24 +290,24 @@ namespace Alba.Jaml.XamlGeneration
             return jcontent.Type == JTokenType.Object ? new[] { (JObject)jcontent } : jcontent.OfType<JObject>();
         }
 
-        public static bool IsProperty (JProperty p)
+        public static bool IsProperty (JProperty prop)
         {
-            return p.Name != pnDollar && p.Name != pnContent;
+            return prop.Name != pnDollar && prop.Name != pnContent;
         }
 
-        public static bool IsScalarProperty (JProperty p)
+        public static bool IsScalarProperty (JProperty prop)
         {
-            return p.Name != pnDollar && p.Name != pnContent && !p.Value.HasValues;
+            return prop.Name != pnDollar && prop.Name != pnContent && !prop.Value.HasValues;
         }
 
-        public static bool IsScalarContentProperty (JProperty p)
+        public static bool IsScalarContentProperty (JProperty prop)
         {
-            return p.Name == pnContent && !p.Value.HasValues;
+            return prop.Name == pnContent && !prop.Value.HasValues;
         }
 
-        public static bool IsComplexProperty (JProperty p)
+        public static bool IsComplexProperty (JProperty prop)
         {
-            return p.Name != pnContent && p.Value.HasValues;
+            return prop.Name != pnContent && prop.Value.HasValues;
         }
 
         private TokenTypeInfo GetTypeInfo (JToken token)
@@ -348,7 +348,6 @@ namespace Alba.Jaml.XamlGeneration
             public ObjectContext (XamlGenerator generator, JObject jobj)
             {
                 JObj = jobj;
-                JContent = JObj[pnContent];
 
                 TokenTypeInfo parentInfo = generator.GetTypeInfo(JObj.Parent);
                 TypeInfo = new TokenTypeInfo { Type = parentInfo.ItemType, ContType = parentInfo.ItemContType };
@@ -369,9 +368,13 @@ namespace Alba.Jaml.XamlGeneration
             public JObject JObj { get; private set; }
             public string ObjId { get; private set; }
             public TokenTypeInfo TypeInfo { get; private set; }
-            public JToken JContent { get; private set; }
             public string Visibility { get; private set; }
             public string TypeName { get; private set; }
+
+            public JToken JContent
+            {
+                get { return JObj[pnContent]; }
+            }
         }
     }
 }

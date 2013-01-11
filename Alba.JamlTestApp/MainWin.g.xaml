@@ -9,10 +9,27 @@
     <Window.Resources>
         <Style
             x:Key="stybtnRed"
-            TargetType="{x:Type Button}" />
+            TargetType="{x:Type Button}">
+            <Setter
+                Property="Background"
+                Value="Red" />
+            <Setter
+                Property="Foreground"
+                Value="Blue" />
+            <Setter
+                Property="Content"
+                Value="{x:Null}" />
+        </Style>
         <Style
             x:Key="stybtnGreen"
-            TargetType="{x:Type Button}" />
+            TargetType="{x:Type Button}">
+            <Setter
+                Property="Background"
+                Value="Green" />
+            <Setter
+                Property="Foreground"
+                Value="Yellow" />
+        </Style>
         <DataTemplate
             DataType="{x:Type Visibility}">
             <TextBlock

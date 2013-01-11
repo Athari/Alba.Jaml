@@ -1,24 +1,40 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Xml.Linq;
+﻿using System.Linq;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 
 namespace Alba.Jaml.XamlGeneration
 {
     public partial class XamlGenerator
     {
-        private XElement GetXElementStyle (ObjectContext ctx)
-        {
-            List<JProperty> allProps = ctx.JObj.Properties().ToList();
+        private const string pnOn = "on";
+        private static readonly Regex ReSetterWithTarget = new Regex(
+            @"^  ref\.  (?<TargetName>" + ReIdent + @")  \.  (?<PropName>.+)  $",
+            DefaultReOptions);
 
-            return new XElement(Ns + ctx.TypeName,
-                GetXAttrObjectVisibility(ctx.JObj, ctx.Visibility),
-                GetXAttrsObjectIds(ctx.ObjId, ctx.TypeInfo),
-                allProps.Where(IsScalarProperty).Select(GetXAttrScalarProperty).ToArray(),
-                allProps.Where(IsScalarContentProperty).Select(GetXTextScalarPropertyContent).ToArray(),
-                allProps.Where(IsComplexProperty).Select(GetXElementComplexObjectProperty).ToArray(),
-                ctx.JContent == null ? null : GetObjectOrEnum(ctx.JContent).Select(GetXObject).ToArray()
-                );
+        private void ProcessStyleObject (ObjectContext ctx)
+        {
+            if (ctx.JContent != null)
+                ctx.JObj[pnContent] = new JArray(((JObject)ctx.JContent).Properties().Select(GetJObjectStyleSetter));
+            //if (ctx.JObj[pnOn] != null) {
+            ctx.JObj.Remove(pnOn);
+            //}
+        }
+
+        private JObject GetJObjectStyleSetter (JProperty prop)
+        {
+            Match mWithTarget = ReSetterWithTarget.Match(prop.Name);
+            string targetName = null, propName = prop.Name;
+            if (mWithTarget.Success) {
+                targetName = mWithTarget.Groups["TargetName"].Value;
+                propName = mWithTarget.Groups["Name"].Value;
+            }
+
+            var jobjSetter = new JObject(new JProperty(pnDollar, "Setter"));
+            if (targetName != null)
+                jobjSetter.Add(new JProperty("TargetName", targetName));
+            jobjSetter.Add(new JProperty("Property", propName));
+            jobjSetter.Add(new JProperty("Value", prop.Value));
+            return jobjSetter;
         }
     }
 }

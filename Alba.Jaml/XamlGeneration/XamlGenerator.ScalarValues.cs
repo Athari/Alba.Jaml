@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
@@ -43,16 +44,30 @@ namespace Alba.Jaml.XamlGeneration
         private object GetXAttrScalarProperty (JProperty prop)
         {
             // attribute="scalarValue"
-            string value = prop.Value.ToString();
-            if (!value.StartsWith("{="))
-                return new XAttribute(FormatScalarPropertyName(prop), FormatScalarPropertyValue(value));
-            else
+            if (prop.Value.Type == JTokenType.String && prop.Value.ToString().StartsWith("{="))
                 return GetXBindingPropertyValue(prop);
+            else
+                return new XAttribute(FormatScalarPropertyName(prop), FormatScalarPropertyValue(prop.Value));
         }
 
-        private string FormatScalarPropertyValue (string value)
+        private string FormatScalarPropertyValue (JToken value)
         {
-            return MarkupAliases.Aggregate(value, (v, alias) => v.Replace(alias[0], alias[1]));
+            switch (value.Type) {
+                case JTokenType.Integer:
+                case JTokenType.Float:
+                case JTokenType.Boolean:
+                case JTokenType.Date:
+                case JTokenType.Guid:
+                case JTokenType.Uri:
+                case JTokenType.TimeSpan:
+                    return ((JValue)value).ToString(CultureInfo.InvariantCulture);
+                case JTokenType.String:
+                    return MarkupAliases.Aggregate((string)value, (v, alias) => v.Replace(alias[0], alias[1]));
+                case JTokenType.Null:
+                    return "{x:Null}";
+                default:
+                    throw new ArgumentOutOfRangeException("value");
+            }
         }
 
         private object GetXBindingPropertyValue (JProperty prop)
