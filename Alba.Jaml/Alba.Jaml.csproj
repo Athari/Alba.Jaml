@@ -49,8 +49,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="XamlGeneration\PropertyShortcuts\GridPropertyShortcut.cs" />
     <Compile Include="XamlGeneration\PropertyShortcuts\IPropertyShortcut.cs" />
+    <Compile Include="XamlGeneration\XamlGenerator.Constants.cs" />
     <Compile Include="XamlGeneration\XamlGenerator.cs" />
     <Compile Include="XamlGeneration\XamlGenerator.ScalarValues.cs" />
+    <Compile Include="XamlGeneration\XamlGenerator.Styles.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Newtonsoft.Json.Linq;
@@ -8,28 +9,38 @@ namespace Alba.Jaml.XamlGeneration
     public partial class XamlGenerator
     {
         private const string ReIdent = @"[_\p{Lu}\p{Ll}\p{Lt}\p{Lm}\p{Lo}\p{Nl}][\p{Lu}\p{Ll}\p{Lt}\p{Lm}\p{Lo}\p{Nl}\p{Mn}\p{Mc}\p{Nd}\p{Pc}\p{Cf}]*";
-        private static readonly Regex ReBindingElementName = new Regex(
-            @"^\{= ?ref\.(?<ElementName>" + ReIdent + @")(?:\.(?<Path>[^,\}]+))?",
-            RegexOptions.Singleline);
-        private static readonly Regex ReBindingSelf = new Regex(
-            @"^\{= ?this(?:\.(?<Path>[^,\}]+))?",
-            RegexOptions.Singleline);
-        private static readonly Regex ReBindingTemplatedParent = new Regex(
-            @"^\{= ?tpl(?:\.(?<Path>[^,\}]+))?",
-            RegexOptions.Singleline);
-        private static readonly Regex ReBindingAncestorType = new Regex(
-            @"^\{= ?~(?<AncestorType>[^,\.\}]+)(?:\.(?<Path>[^,\}]+))?",
-            RegexOptions.Singleline);
-        private static readonly Regex ReBindingSource = new Regex(
-            @"^\{=\ ?@(?<Source>\{
-              (?:
+        private const string ReCurlyBracesContents = @"
+            (
                 [^\{\}] | (?<paren>\{) | (?<-paren>\})
-              )+
-              (?(paren)(?!))
-            \})(?:\.(?<Path>[^,\}]+))?",
-            RegexOptions.Singleline | RegexOptions.IgnorePatternWhitespace);
+            )+
+            (?(paren)(?!))";
+        private const string ReInCurlyBraces = @"\{" + ReCurlyBracesContents + @"\}";
+        private const string ReOptionalPropPath = @"(  \.  (?<Path>[^,\}]+)  )?";
+        private const string StrExpressionSuffix = "${}";
+        private const RegexOptions DefaultReOptions = RegexOptions.Singleline | RegexOptions.ExplicitCapture | RegexOptions.IgnorePatternWhitespace;
+        private static readonly Regex ReBindingElementName = new Regex(
+            @"^  \{=\s*  ref\.  (?<ElementName>" + ReIdent + @")  " + ReOptionalPropPath,
+            DefaultReOptions);
+        private static readonly Regex ReBindingSelf = new Regex(
+            @"^  \{=\s*  this  " + ReOptionalPropPath,
+            DefaultReOptions);
+        private static readonly Regex ReBindingTemplatedParent = new Regex(
+            @"^  \{=\s*  tpl  " + ReOptionalPropPath,
+            DefaultReOptions);
+        private static readonly Regex ReBindingAncestorType = new Regex(
+            @"^  \{=\s*  ~  (?<AncestorType>[^,\.\}]+)  " + ReOptionalPropPath,
+            DefaultReOptions);
+        private static readonly Regex ReBindingSource = new Regex(
+            @"^  \{=\s*  @  (?<Source>" + ReInCurlyBraces + @")  " + ReOptionalPropPath,
+            DefaultReOptions);
+        private static readonly Regex ReGenericBinding = new Regex(
+            @"^  \{=\s*  (?<Expression>" + ReCurlyBracesContents + @")  \s*\}  $",
+            DefaultReOptions);
+        private static readonly Regex ReSubBinding = new Regex(
+            @"  \$  (?<SubBinding>" + ReInCurlyBraces + @")  (?<Between>.*?)  (?= \$\{ | $ | ,(?!.*\$\{\}) )",
+            DefaultReOptions);
 
-        private static object GetXAttrScalarProperty (JProperty prop)
+        private object GetXAttrScalarProperty (JProperty prop)
         {
             // attribute="scalarValue"
             string value = prop.Value.ToString();
@@ -39,63 +50,78 @@ namespace Alba.Jaml.XamlGeneration
                 return GetXBindingPropertyValue(prop);
         }
 
-        private static string FormatScalarPropertyValue (string value)
+        private string FormatScalarPropertyValue (string value)
         {
             return MarkupAliases.Aggregate(value, (v, alias) => v.Replace(alias[0], alias[1]));
         }
 
-        private static object GetXBindingPropertyValue (JProperty prop)
+        private object GetXBindingPropertyValue (JProperty prop)
         {
             string value = prop.Value.ToString();
+
             string scalarValue = FormatSimpleBindingScalarValue(value);
             if (scalarValue != null)
                 return new XAttribute(FormatScalarPropertyName(prop), FormatScalarPropertyValue(scalarValue));
-            // TODO Format complex binding value (generate converters)
-            return new XAttribute(FormatScalarPropertyName(prop), FormatScalarPropertyValue(value));
+
+            object complexValue = FormatComplexBindingScalarValue(value);
+            if (complexValue == null)
+                return new XAttribute(FormatScalarPropertyName(prop), FormatScalarPropertyValue(value));
+            else if (complexValue is string)
+                return new XAttribute(FormatScalarPropertyName(prop), complexValue);
+            else
+                return new XElement(Ns + FormatComplexPropertyName(prop), complexValue);
         }
 
-        private static string FormatSimpleBindingScalarValue (string value)
+        private string FormatSimpleBindingScalarValue (string value)
         {
-            string scalarValue = null;
-            Match match = ReBindingElementName.Match(value);
-            if (match.Success) {
-                scalarValue = string.IsNullOrEmpty(match.Groups["Path"].Value)
-                    ? match.Result("{Binding ElementName=${ElementName}$'")
-                    : match.Result("{Binding ${Path}, ElementName=${ElementName}$'");
+            Match mBinding = ReBindingElementName.Match(value);
+            if (mBinding.Success) {
+                return String.IsNullOrEmpty(mBinding.Groups["Path"].Value)
+                    ? mBinding.Result("{Binding ElementName=${ElementName}$'")
+                    : mBinding.Result("{Binding ${Path}, ElementName=${ElementName}$'");
             }
-            if (scalarValue == null) {
-                match = ReBindingSelf.Match(value);
-                if (match.Success) {
-                    scalarValue = string.IsNullOrEmpty(match.Groups["Path"].Value)
-                        ? match.Result("{Binding RelativeSource={RelativeSource Self}$'")
-                        : match.Result("{Binding ${Path}, RelativeSource={RelativeSource Self}$'");
-                }
+            mBinding = ReBindingSelf.Match(value);
+            if (mBinding.Success) {
+                return String.IsNullOrEmpty(mBinding.Groups["Path"].Value)
+                    ? mBinding.Result("{Binding RelativeSource={RelativeSource Self}$'")
+                    : mBinding.Result("{Binding ${Path}, RelativeSource={RelativeSource Self}$'");
             }
-            if (scalarValue == null) {
-                match = ReBindingTemplatedParent.Match(value);
-                if (match.Success) {
-                    scalarValue = string.IsNullOrEmpty(match.Groups["Path"].Value)
-                        ? match.Result("{Binding RelativeSource={RelativeSource TemplatedParent}$'")
-                        : match.Result("{Binding ${Path}, RelativeSource={RelativeSource TemplatedParent}$'");
-                }
+            mBinding = ReBindingTemplatedParent.Match(value);
+            if (mBinding.Success) {
+                return String.IsNullOrEmpty(mBinding.Groups["Path"].Value)
+                    ? mBinding.Result("{Binding RelativeSource={RelativeSource TemplatedParent}$'")
+                    : mBinding.Result("{Binding ${Path}, RelativeSource={RelativeSource TemplatedParent}$'");
             }
-            if (scalarValue == null) {
-                match = ReBindingAncestorType.Match(value);
-                if (match.Success) {
-                    scalarValue = string.IsNullOrEmpty(match.Groups["Path"].Value)
-                        ? match.Result("{Binding RelativeSource={RelativeSource AncestorType=${AncestorType}}$'")
-                        : match.Result("{Binding ${Path}, RelativeSource={RelativeSource AncestorType=${AncestorType}}$'");
-                }
+            mBinding = ReBindingAncestorType.Match(value);
+            if (mBinding.Success) {
+                return String.IsNullOrEmpty(mBinding.Groups["Path"].Value)
+                    ? mBinding.Result("{Binding RelativeSource={RelativeSource AncestorType=${AncestorType}}$'")
+                    : mBinding.Result("{Binding ${Path}, RelativeSource={RelativeSource AncestorType=${AncestorType}}$'");
             }
-            if (scalarValue == null) {
-                match = ReBindingSource.Match(value);
-                if (match.Success) {
-                    scalarValue = string.IsNullOrEmpty(match.Groups["Path"].Value)
-                        ? match.Result("{Binding Source=${Source}$'")
-                        : match.Result("{Binding ${Path}, Source=${Source}$'");
-                }
+            mBinding = ReBindingSource.Match(value);
+            if (mBinding.Success) {
+                return String.IsNullOrEmpty(mBinding.Groups["Path"].Value)
+                    ? mBinding.Result("{Binding Source=${Source}$'")
+                    : mBinding.Result("{Binding ${Path}, Source=${Source}$'");
             }
-            return scalarValue;
+            return null;
         }
+
+        private object FormatComplexBindingScalarValue (string value)
+        {
+            var mBinding = ReGenericBinding.Match(value);
+            if (!mBinding.Success)
+                return null;
+
+            var mSubBindings = ReSubBinding.Matches(mBinding.Groups["Expression"].Value);
+            if (mSubBindings.Count == 0)
+                return null;
+
+            //var conv = new ConverterInfo();
+            return null;
+        }
+
+        public class ConverterInfo
+        {}
     }
 }

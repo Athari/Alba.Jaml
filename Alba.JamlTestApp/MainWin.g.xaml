@@ -4,7 +4,7 @@
     Width="500"
     Height="300"
     SnapsToDevicePixels="True"
-    TextOptions.TextFormattingMode="Display" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    TextOptions.TextFormattingMode="Display" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:my="clr-namespace:Alba.JamlTestApp"
     x:Class="Alba.JamlTestApp.MainWin" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
     <Window.Resources>
         <Style
