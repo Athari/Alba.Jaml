@@ -4,7 +4,12 @@
     SnapsToDevicePixels: true, TextOptions$TextFormattingMode: "Display",
     Resources: [{
         $: "Style stybtnRed Button",
-        set: { Background: "Red", Foreground: "Blue", Content: null },
+        set: {
+            ref$ctlName$Background: "Red",
+            Foreground: "Blue",
+            Content: null,
+            TextOptions$TextFormattingMode: "Display"
+        },
         on: [
             { }
         ]
@@ -14,9 +19,10 @@
     },{
         $: "DataTemplate {~Visibility}",
         _: {
-            $: "TextBlock", Foreground: "Purple", FontWeight: "Bold", Text: "{=}",
-            /*Visibility: "{= ${=this.IsMouseOver} || ${=this.IsMouseDirectlyOver} ? Visibility.Visible : Visibility.Hidden}",*/
-            /*Visibility: "{= ${=this.IsMouseOver} ? Visibility.Visible : Visibility.Hidden}",*/
+            $: "TextBlock", Foreground: "Purple", FontWeight: "Bold",
+            /*Text: '{= string.Format("IsMouseOver={0}\nIsDirectlyMouseOver={1}", ${=this.IsMouseOver}, ${=this.IsDirectlyMouseOver}) }',*/
+            /*Visibility: "{= (bool)${=this.IsMouseOver} || (bool)${=this.IsMouseDirectlyOver} ? Visibility.Visible : Visibility.Hidden}",*/
+            /*Visibility: "{= (bool)${=this.IsMouseOver} ? Visibility.Visible : Visibility.Hidden}",*/
         }
     }, {
         $: "Visibility IamGreenToo",

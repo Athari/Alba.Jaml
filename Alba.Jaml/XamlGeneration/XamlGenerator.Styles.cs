@@ -30,11 +30,11 @@ namespace Alba.Jaml.XamlGeneration
 
         private JObject GetJObjectStyleSetter (JProperty prop)
         {
-            Match mWithTarget = ReSetterWithTarget.Match(prop.Name);
-            string targetName = null, propName = prop.Name;
+            string targetName = null, propName = FormatScalarPropertyName(prop);
+            Match mWithTarget = ReSetterWithTarget.Match(propName);
             if (mWithTarget.Success) {
                 targetName = mWithTarget.Groups["TargetName"].Value;
-                propName = mWithTarget.Groups["Name"].Value;
+                propName = mWithTarget.Groups["PropName"].Value;
             }
 
             var jobjSetter = new JObject(new JProperty(pnDollar, "Setter"));

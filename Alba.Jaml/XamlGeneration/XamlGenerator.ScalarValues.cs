@@ -132,11 +132,23 @@ namespace Alba.Jaml.XamlGeneration
             if (mSubBindings.Count == 0)
                 return null;
 
-            //var conv = new ConverterInfo();
+            var conv = new ConverterInfo { Name = "_jaml_Converter" };
+            EnsureConverterNameUnique(conv);
+            _converters.Add(conv);
             return null;
         }
 
+        private void EnsureConverterNameUnique (ConverterInfo conv)
+        {
+            string name = conv.Name;
+            int num = 1;
+            while (_converters.Any(c => c.Name == conv.Name))
+                conv.Name = name + num++;
+        }
+
         public class ConverterInfo
-        {}
+        {
+            public string Name { get; set; }
+        }
     }
 }

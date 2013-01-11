@@ -11,6 +11,7 @@
             x:Key="stybtnRed"
             TargetType="{x:Type Button}">
             <Setter
+                TargetName="ctlName"
                 Property="Background"
                 Value="Red" />
             <Setter
@@ -19,6 +20,9 @@
             <Setter
                 Property="Content"
                 Value="{x:Null}" />
+            <Setter
+                Property="TextOptions.TextFormattingMode"
+                Value="Display" />
         </Style>
         <Style
             x:Key="stybtnGreen"
@@ -34,8 +38,7 @@
             DataType="{x:Type Visibility}">
             <TextBlock
                 Foreground="Purple"
-                FontWeight="Bold"
-                Text="{Binding}" />
+                FontWeight="Bold" />
         </DataTemplate>
         <Visibility
             x:Key="IamGreenToo">Visible</Visibility>

@@ -20,7 +20,8 @@ namespace Alba.Jaml.XamlGeneration
         private readonly string _nameSpace;
         private readonly string _className;
         private readonly Dictionary<JToken, TokenTypeInfo> _typeInfos = new Dictionary<JToken, TokenTypeInfo>();
-        private readonly List<IPropertyShortcut> PropertyShortcuts;
+        private readonly List<ConverterInfo> _converters = new List<ConverterInfo>();
+        private readonly List<IPropertyShortcut> _propertyShortcuts;
 
         public readonly XNamespace NsMy;
 
@@ -29,11 +30,16 @@ namespace Alba.Jaml.XamlGeneration
             _data = data;
             _nameSpace = nameSpace;
             _className = className;
-            PropertyShortcuts = GetType().Assembly.GetTypes()
+            _propertyShortcuts = GetType().Assembly.GetTypes()
                 .Where(t => t.GetInterface(typeof(IPropertyShortcut).FullName) != null)
                 .Select(t => (IPropertyShortcut)Activator.CreateInstance(t))
                 .ToList();
             NsMy = String.Format("clr-namespace:{0}", _nameSpace);
+        }
+
+        public IEnumerable<ConverterInfo> Converters
+        {
+            get { return _converters; }
         }
 
         public string GenerateXaml ()
@@ -89,7 +95,7 @@ namespace Alba.Jaml.XamlGeneration
             var shortPropNames = new List<string>();
             var xAttrsShortProps = new List<XAttribute>();
             foreach (JProperty prop in jobj.Properties()) {
-                IPropertyShortcut shortcut = PropertyShortcuts.FirstOrDefault(ps => ps.IsPropertySupported(prop));
+                IPropertyShortcut shortcut = _propertyShortcuts.FirstOrDefault(ps => ps.IsPropertySupported(prop));
                 if (shortcut != null) {
                     shortPropNames.Add(prop.Name);
                     xAttrsShortProps.AddRange(shortcut.GetAttributes(prop));
