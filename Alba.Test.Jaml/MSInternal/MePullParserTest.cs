@@ -25,6 +25,7 @@ namespace Alba.Test.Jaml.MSInternal
             var sb = new StringBuilder();
             foreach (XamlNode xamlNode in meParser.Parse(me, 0, 0))
                 sb.AppendFormat("{0}\n", xamlNode);
+            //throw new Exception(SR.Get("MissingImplicitPropertyTypeCase"));
             throw new Exception(sb.ToString());
         }
     }

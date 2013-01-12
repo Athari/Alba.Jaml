@@ -63,6 +63,7 @@
     <Compile Include="MSInternal\XamlContext.cs" />
     <Compile Include="MSInternal\XamlContextStack.cs" />
     <Compile Include="MSInternal\XamlFrame.cs" />
+    <Compile Include="MSInternal\XamlLanguage.cs" />
     <Compile Include="MSInternal\XamlName.cs" />
     <Compile Include="MSInternal\XamlNode.cs" />
     <Compile Include="MSInternal\XamlParseException.cs" />
@@ -87,7 +88,7 @@
     <None Include="T4\MultipleOutputHelper.ttinclude" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="MSInternal\ExceptionStringTable.resources.resx">
+    <EmbeddedResource Include="MSInternal\ExceptionStringTable.resx">
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>

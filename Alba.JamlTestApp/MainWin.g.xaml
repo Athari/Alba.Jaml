@@ -4,8 +4,8 @@
     Width="500"
     Height="300"
     SnapsToDevicePixels="True"
-    TextOptions.TextFormattingMode="Display" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:my="clr-namespace:Alba.JamlTestApp"
-    x:Class="Alba.JamlTestApp.MainWin" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+    TextOptions.TextFormattingMode="Display" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:my="clr-namespace:Alba.JamlTestApp"
+    x:Class="Alba.JamlTestApp.MainWin">
     <Window.Resources>
         <Style
             x:Key="stybtnRed"
@@ -47,7 +47,8 @@
             DataType="{x:Type Visibility}">
             <TextBlock
                 Foreground="Purple"
-                FontWeight="Bold" />
+                FontWeight="Bold"
+                Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource Self}, Converter={x:Static my:MainWin._jaml_Converter}}" />
         </DataTemplate>
         <Visibility
             x:Key="IamGreenToo">Visible</Visibility>

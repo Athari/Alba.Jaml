@@ -21,6 +21,7 @@ class Manager {
     private class Block {
         public String Name;
         public int Start, Length;
+        public bool GenerateOnce;
     }
 
     private Block currentBlock;
@@ -35,14 +36,19 @@ class Manager {
         return (host is IServiceProvider) ? new VSManager(host, template) : new Manager(host, template);
     }
 
-    public void StartFile(String name) {
+    public void StartFile(String name, bool generateOnce = false) {
         if (name == null)
             throw new ArgumentNullException("name");
-        CurrentBlock = new Block { Name = name };
+        CurrentBlock = new Block { Name = name, GenerateOnce = generateOnce };
     }
 
     public void GenerateFile(String name, Action generate) {
         StartFile(name);
+        generate();
+    }
+
+    public void GenerateFileOnce(String name, Action generate) {
+        StartFile(name, true);
         generate();
     }
 
@@ -74,14 +80,14 @@ class Manager {
                 String fileName = Path.Combine(outputPath, block.Name);
                 String content = headerText + template.ToString(block.Start, block.Length) + footerText;
                 generatedFileNames.Add(fileName);
-                CreateFile(fileName, content);
+                CreateFile(fileName, content, block.GenerateOnce);
                 template.Remove(block.Start, block.Length);
             }
         }
     }
 
-    protected virtual void CreateFile(String fileName, String content) {
-        if (IsFileContentDifferent(fileName, content))
+    protected virtual void CreateFile(String fileName, String content, bool generateOnce) {
+        if (ShouldRewriteFile(fileName, content, generateOnce))
             File.WriteAllText(fileName, content);
     }
 
@@ -93,8 +99,10 @@ class Manager {
         get { return null; }
     }
 
-    protected bool IsFileContentDifferent(String fileName, String newContent) {
-        return !(File.Exists(fileName) && File.ReadAllText(fileName) == newContent);
+    protected bool ShouldRewriteFile(String fileName, String newContent, bool generateOnce) {
+        return generateOnce
+            ? !File.Exists(fileName)
+            : !File.Exists(fileName) || File.ReadAllText(fileName) != newContent;
     }
 
     private Manager(ITextTemplatingEngineHost host, StringBuilder template) {
@@ -136,8 +144,8 @@ class Manager {
             projectSyncAction.EndInvoke(projectSyncAction.BeginInvoke(generatedFileNames, null, null));
         }
 
-        protected override void CreateFile(String fileName, String content) {
-            if (IsFileContentDifferent(fileName, content)) {
+        protected override void CreateFile(String fileName, String content, bool generateOnce) {
+            if (ShouldRewriteFile(fileName, content, generateOnce)) {
                 CheckoutFileIfRequired(fileName);
                 File.WriteAllText(fileName, content);
             }

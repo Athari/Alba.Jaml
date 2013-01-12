@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Markup;
 using System.Xml;
 using System.Xml.Linq;
+using Alba.Jaml.MSInternal;
 using Alba.Jaml.XamlGeneration.PropertyShortcuts;
 using Newtonsoft.Json.Linq;
 
@@ -20,10 +21,7 @@ namespace Alba.Jaml.XamlGeneration
     public partial class XamlGenerator
     {
         private readonly JObject _data;
-        private readonly string _nameSpace;
-        private readonly string _className;
         private readonly Dictionary<JToken, TokenTypeInfo> _typeInfos = new Dictionary<JToken, TokenTypeInfo>();
-        private readonly List<ConverterInfo> _converters = new List<ConverterInfo>();
         private readonly List<IPropertyShortcut> _propertyShortcuts;
 
         public readonly XNamespace NsMy;
@@ -31,37 +29,40 @@ namespace Alba.Jaml.XamlGeneration
         public XamlGenerator (JObject data, string nameSpace, string className)
         {
             _data = data;
-            _nameSpace = nameSpace;
-            _className = className;
+            NameSpace = nameSpace;
+            ClassName = className;
+            Converters = new List<ConverterInfo>();
             _propertyShortcuts = GetType().Assembly.GetTypes()
                 .Where(t => t.GetInterface(typeof(IPropertyShortcut).FullName) != null)
                 .Select(t => (IPropertyShortcut)Activator.CreateInstance(t))
                 .ToList();
-            NsMy = String.Format("clr-namespace:{0}", _nameSpace);
+            NsMy = String.Format("{0}:{1}", KnownStrings.UriClrNamespace, NameSpace);
         }
 
-        public IEnumerable<ConverterInfo> Converters
-        {
-            get { return _converters; }
-        }
+        public string ClassName { get; private set; }
+        public string ClassVisibility { get; private set; }
+        public string NameSpace { get; private set; }
+        public List<ConverterInfo> Converters { get; private set; }
 
         public string GenerateXaml ()
         {
             var root = GetXObject(_data);
             root.Add(
-                //new XAttribute("xmlns", Ns),
-                new XAttribute(XNamespace.Xmlns + "x", NsX),
-                new XAttribute(XNamespace.Xmlns + "my", NsMy),
-                new XAttribute(NsX + "Class", String.Format("{0}.{1}", _nameSpace, _className))
+                new XAttribute("xmlns", Ns),
+                new XAttribute(XNamespace.Xmlns + NsXPrefix, NsX),
+                new XAttribute(XNamespace.Xmlns + NsLocalPrefix, NsMy),
+                new XAttribute(NsX + XamlLanguage.Class.Name, String.Format("{0}.{1}", NameSpace, ClassName))
                 );
             var xaml = new XDocument(root);
+            var attrClassVisibility = root.Attribute(NsX + XamlLanguage.ClassModifier.Name);
+            ClassVisibility = attrClassVisibility != null ? attrClassVisibility.Value : "public";
 
             var sb = new StringBuilder();
             using (var xmlWriter = XmlWriter.Create(sb,
                 new XmlWriterSettings {
                     OmitXmlDeclaration = true,
                     Indent = true,
-                    IndentChars = "    ",
+                    IndentChars = IndentChars,
                     NewLineOnAttributes = true,
                     NamespaceHandling = NamespaceHandling.OmitDuplicates,
                 }))
@@ -130,7 +131,9 @@ namespace Alba.Jaml.XamlGeneration
         private XAttribute GetXAttrObjectVisibility (JObject jobj, string visibility)
         {
             bool isRoot = jobj.Parent == null;
-            return visibility == null ? null : new XAttribute(NsX + (isRoot ? "Class" : "Field") + "Modifier", visibility);
+            return visibility == null ? null : new XAttribute(
+                NsX + (isRoot ? XamlLanguage.ClassModifier.Name : XamlLanguage.FieldModifier.Name),
+                visibility);
         }
 
         /// <summary>Get XAttributes for object identifiers: x:Name/x:Key="objIdExplicit" ImplicitKey="objKeyImplicit".</summary>
@@ -162,7 +165,9 @@ namespace Alba.Jaml.XamlGeneration
 
             bool isContDict = objInfo.PropertyContainerType != null && IsTypeDictionary(objInfo.PropertyContainerType);
             if (objIdExplicit != null)
-                yield return new XAttribute(NsX + (isContDict ? "Key" : "Name"), objIdExplicit);
+                yield return new XAttribute(
+                    NsX + (isContDict ? XamlLanguage.Key.Name : XamlLanguage.Name.Name),
+                    objIdExplicit);
             if (objIdImplicit != null)
                 yield return new XAttribute(propKey, FormatScalarPropertyValue(objIdImplicit));
         }
@@ -244,7 +249,8 @@ namespace Alba.Jaml.XamlGeneration
                 return prop.PropertyType;
 
             // dependency property
-            FieldInfo dfield = objType.GetField(propName + "Property", BindingFlags.Static | BindingFlags.Public);
+            FieldInfo dfield = objType.GetField(propName + KnownStrings.DependencyPropertySuffix,
+                BindingFlags.Static | BindingFlags.Public);
             if (dfield != null) {
                 var dprop = dfield.GetValue(null) as DependencyProperty;
                 if (dprop != null)
@@ -258,8 +264,8 @@ namespace Alba.Jaml.XamlGeneration
         {
             Type type = GetWpfTypeByName(PresentationCore, typeName)
                 ?? GetWpfTypeByName(PresentationFramework, typeName)
-                    ?? GetWpfTypeByName(PresentationCore, typeName + "Extension")
-                        ?? GetWpfTypeByName(PresentationFramework, typeName + "Extension");
+                    ?? GetWpfTypeByName(PresentationCore, typeName + KnownStrings.Extension)
+                        ?? GetWpfTypeByName(PresentationFramework, typeName + KnownStrings.Extension);
             if (type == null)
                 throw new InvalidOperationException(String.Format("Class {0} not found.", typeName));
             return type;

@@ -4,19 +4,23 @@ using System.Reflection;
 using System.Windows;
 using System.Windows.Controls;
 using System.Xml.Linq;
+using Alba.Jaml.MSInternal;
 
 namespace Alba.Jaml.XamlGeneration
 {
     public partial class XamlGenerator
     {
-        public readonly XNamespace Ns = XNamespace.Get("http://schemas.microsoft.com/winfx/2006/xaml/presentation");
-        public readonly XNamespace NsX = XNamespace.Get("http://schemas.microsoft.com/winfx/2006/xaml");
+        public readonly XNamespace Ns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        public readonly XNamespace NsX = XamlLanguage.Xaml2006Namespace;
 
+        private const string NsXPrefix = XamlLanguage.PreferredPrefix;
+        private const string NsLocalPrefix = "my";
+        private const string IndentChars = "    ";
         private const string pnDollar = "$";
         private const string pnContent = "_";
         private static readonly Assembly PresentationCore = typeof(Visibility).Assembly;
         private static readonly Assembly PresentationFramework = typeof(Window).Assembly;
-        private static readonly string[] WpfNameSpaces = new[] {
+        public static readonly string[] WpfNameSpaces = new[] {
             "System.Windows",
             "System.Windows.Annotations",
             "System.Windows.Annotations.Storage",

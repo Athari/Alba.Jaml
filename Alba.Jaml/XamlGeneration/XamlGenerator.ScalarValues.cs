@@ -1,10 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using Alba.Jaml.MSInternal;
 using Newtonsoft.Json.Linq;
 
 namespace Alba.Jaml.XamlGeneration
@@ -148,23 +148,60 @@ namespace Alba.Jaml.XamlGeneration
             if (mSubBindings.Count == 0)
                 return null;
 
-            var conv = new ConverterInfo { Name = "_jaml_Converter" };
+            var conv = new ConverterInfo {
+                Name = "_jaml_Converter",
+                SubBindings = new List<string>(),
+            };
+            var sbExpr = new StringBuilder(mSubBindings[0].Result("$`"));
+            for (int i = 0; i < mSubBindings.Count; ++i) {
+                sbExpr.AppendFormat(CultureInfo.InvariantCulture, "(values[{0}]){1}",
+                    i, mSubBindings[i].Groups["Between"].Value);
+                string subBindingValue = mSubBindings[i].Groups["SubBinding"].Value;
+                string subBindingScalarValue = FormatSimpleBindingScalarValue(subBindingValue);
+                conv.SubBindings.Add(FormatScalarPropertyValue(subBindingScalarValue ?? subBindingValue));
+            }
+            conv.Expression = sbExpr.ToString();
+
+            string afterExpr = mSubBindings[mSubBindings.Count - 1].Result("$'");
+            if (afterExpr.StartsWith(StrExpressionPostfix))
+                afterExpr = afterExpr.Substring(StrExpressionPostfix.Length);
+            afterExpr = afterExpr.Trim();
+
             EnsureConverterNameUnique(conv);
-            _converters.Add(conv);
-            return null;
+            Converters.Add(conv);
+
+            if (conv.SubBindings.Count == 1) {
+                string binding = conv.SubBindings[0].Trim();
+                if (binding[binding.Length - 1] != '}')
+                    throw new InvalidOperationException(string.Format("Binding is invalid: '{0}'.", binding));
+                return string.Format(CultureInfo.InvariantCulture, "{0}, Converter={1}{2}}}",
+                    binding.Substring(0, binding.Length - 1),
+                    FormatGeneratedConverterReference(conv.Name),
+                    afterExpr);
+            }
+            else
+                return null; // TODO Generate MultiBinding using MePullParser
+        }
+
+        private string FormatGeneratedConverterReference (string name)
+        {
+            return string.Format(CultureInfo.InvariantCulture, "{{x:Static {0}:{1}.{2}}}",
+                NsLocalPrefix, ClassName, name);
+        }
+
+        public class ConverterInfo
+        {
+            public string Name { get; set; }
+            public string Expression { get; set; }
+            public List<string> SubBindings { get; set; }
         }
 
         private void EnsureConverterNameUnique (ConverterInfo conv)
         {
             string name = conv.Name;
             int num = 1;
-            while (_converters.Any(c => c.Name == conv.Name))
+            while (Converters.Any(c => c.Name == conv.Name))
                 conv.Name = name + num++;
-        }
-
-        public class ConverterInfo
-        {
-            public string Name { get; set; }
         }
     }
 }
