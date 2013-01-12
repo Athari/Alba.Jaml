@@ -149,14 +149,24 @@ namespace Alba.Jaml.XamlGeneration
             if (mSubs.Count == 0)
                 return null;
 
+            Group groupSubLast = mSubs[mSubs.Count - 1].Groups["SubBinding"];
+            int termPos = GetComplexBindingTermPos(strBinding, groupSubLast);
+            ConverterInfo conv = AddComplexBindingConverter(mSubs, strBinding, termPos);
+            return FormatComplexBindingScalarValueFromConverter(conv, strBinding, termPos);
+        }
+
+        private static int GetComplexBindingTermPos (string strBinding, Group groupSubLast)
+        {
             int termPos = strBinding.IndexOf(StrExpressionPostfix, StringComparison.InvariantCulture);
-            if (termPos == -1) {
-                Group groupSubLast = mSubs[mSubs.Count - 1].Groups["SubBinding"];
+            if (termPos == -1)
                 termPos = strBinding.IndexOf(',', groupSubLast.Index + groupSubLast.Length);
-            }
             if (termPos == -1)
                 termPos = strBinding.Length;
+            return termPos;
+        }
 
+        private ConverterInfo AddComplexBindingConverter (MatchCollection mSubs, string strBinding, int termPos)
+        {
             var sbExpr = new StringBuilder(mSubs[0].Result("$`"));
             var conv = new ConverterInfo {
                 Name = string.Format(CultureInfo.InvariantCulture, "_jaml_{0}Converter", ClassName),
@@ -172,13 +182,17 @@ namespace Alba.Jaml.XamlGeneration
             }
             conv.Expression = sbExpr.ToString().Trim();
 
+            EnsureConverterNameUnique(conv);
+            Converters.Add(conv);
+            return conv;
+        }
+
+        private object FormatComplexBindingScalarValueFromConverter (ConverterInfo conv, string strBinding, int termPos)
+        {
             string afterExpr = strBinding.Substring(termPos);
             if (afterExpr.StartsWith(StrExpressionPostfix))
                 afterExpr = afterExpr.Substring(StrExpressionPostfix.Length);
             afterExpr = afterExpr.Trim();
-
-            EnsureConverterNameUnique(conv);
-            Converters.Add(conv);
 
             if (conv.IsSingle) {
                 string binding = conv.SubBindings[0].Trim();
@@ -206,6 +220,14 @@ namespace Alba.Jaml.XamlGeneration
                 NsLocalPrefix, ClassName, name);
         }
 
+        private void EnsureConverterNameUnique (ConverterInfo conv)
+        {
+            string name = conv.Name;
+            int num = 1;
+            while (Converters.Any(c => c.Name == conv.Name))
+                conv.Name = name + num++;
+        }
+
         public class ConverterInfo
         {
             public string Name { get; set; }
@@ -215,14 +237,6 @@ namespace Alba.Jaml.XamlGeneration
             {
                 get { return SubBindings.Count == 1; }
             }
-        }
-
-        private void EnsureConverterNameUnique (ConverterInfo conv)
-        {
-            string name = conv.Name;
-            int num = 1;
-            while (Converters.Any(c => c.Name == conv.Name))
-                conv.Name = name + num++;
         }
     }
 }
