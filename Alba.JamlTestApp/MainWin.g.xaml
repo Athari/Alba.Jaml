@@ -48,7 +48,8 @@
             <TextBlock
                 Foreground="Purple"
                 FontWeight="Bold"
-                Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource Self}, Converter={x:Static my:MainWin._jaml_Converter}}" />
+                Text="{= string.Format(&quot;IsMouseOver={0}\nIsDirectlyMouseOver={1}&quot;, ${=this.IsMouseOver}, ${=this.IsDirectlyMouseOver}) ${}}"
+                Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource Self}, Converter={x:Static my:MainWin._jaml_MainWinConverter1}}" />
         </DataTemplate>
         <Visibility
             x:Key="IamGreenToo">Visible</Visibility>

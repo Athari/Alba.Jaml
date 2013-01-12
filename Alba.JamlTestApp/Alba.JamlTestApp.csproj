@@ -68,6 +68,12 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="MainWin.g.xaml.cs">
+      <DependentUpon>MainWin.tt</DependentUpon>
+    </Compile>
+    <Compile Include="MainWin.xaml.cs">
+      <DependentUpon>MainWin.tt</DependentUpon>
+    </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>

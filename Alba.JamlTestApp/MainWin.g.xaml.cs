@@ -1,6 +1,8 @@
 // ReSharper disable RedundantUsingDirective
+// ReSharper disable RedundantCast
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -39,5 +41,38 @@ namespace Alba.JamlTestApp
 {
     public partial class MainWin
     {
+        public static IMultiValueConverter _jaml_MainWinConverter = new _jaml_MainWinConverter_Class();
+        public static IValueConverter _jaml_MainWinConverter1 = new _jaml_MainWinConverter1_Class();
+ 
+        private class _jaml_MainWinConverter_Class : IMultiValueConverter
+        {
+            public object Convert (object[] values, Type targetType, object param, CultureInfo culture)
+            {
+                if (values.Any(v => ReferenceEquals(v, DependencyProperty.UnsetValue)))
+                    return DependencyProperty.UnsetValue;
+                return string.Format("IsMouseOver={0}\nIsDirectlyMouseOver={1}", (values[0]), (values[1])) ;
+            }
+
+            public object[] ConvertBack (object value, Type[] targetTypes, object param, CultureInfo culture)
+            {
+                throw new NotSupportedException("Converter supports only one-way binding.");
+            }
+        }
+ 
+        private class _jaml_MainWinConverter1_Class : IValueConverter
+        {
+            public object Convert (object value, Type targetType, object param, CultureInfo culture)
+            {
+                if (ReferenceEquals(value, DependencyProperty.UnsetValue))
+                    return DependencyProperty.UnsetValue;
+                return (bool)value ? Visibility.Visible : Visibility.Hidden;
+            }
+
+            public object ConvertBack (object value, Type targetType, object param, CultureInfo culture)
+            {
+                throw new NotSupportedException("Converter supports only one-way binding.");
+            }
+        }
+ 
     }
 }

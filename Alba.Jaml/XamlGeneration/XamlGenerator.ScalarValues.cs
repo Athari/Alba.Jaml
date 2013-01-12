@@ -149,7 +149,7 @@ namespace Alba.Jaml.XamlGeneration
                 return null;
 
             var conv = new ConverterInfo {
-                Name = "_jaml_Converter",
+                Name = string.Format(CultureInfo.InvariantCulture, "_jaml_{0}Converter", ClassName),
                 SubBindings = new List<string>(),
             };
             var sbExpr = new StringBuilder(mSubBindings[0].Result("$`"));
@@ -170,7 +170,7 @@ namespace Alba.Jaml.XamlGeneration
             EnsureConverterNameUnique(conv);
             Converters.Add(conv);
 
-            if (conv.SubBindings.Count == 1) {
+            if (conv.IsSingle) {
                 string binding = conv.SubBindings[0].Trim();
                 if (binding[binding.Length - 1] != '}')
                     throw new InvalidOperationException(string.Format("Binding is invalid: '{0}'.", binding));
@@ -194,6 +194,10 @@ namespace Alba.Jaml.XamlGeneration
             public string Name { get; set; }
             public string Expression { get; set; }
             public List<string> SubBindings { get; set; }
+            public bool IsSingle
+            {
+                get { return SubBindings.Count == 1; }
+            }
         }
 
         private void EnsureConverterNameUnique (ConverterInfo conv)
