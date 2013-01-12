@@ -27,9 +27,9 @@
         $: "DataTemplate {~Visibility}",
         _: {
             $: "TextBlock", Foreground: "Purple", FontWeight: "Bold",
-            Text: '{= string.Format("IsMouseOver={0}\\nIsDirectlyMouseOver={1}", ${=this.IsMouseOver}, ${=this.IsDirectlyMouseOver}) ${}}',
+            Text: '{= string.Format("IsMouseOver={0}\\nIsDirectlyMouseOver={1}", ${=this.IsMouseOver}, ${=this.IsDirectlyMouseOver}) }',
             /*Visibility1: "{= (bool)${=this.IsMouseOver} || (bool)${=this.IsMouseDirectlyOver} ? Visibility.Visible : Visibility.Hidden}",*/
-            Visibility: "{= (bool)${=this.IsMouseOver} ? Visibility.Visible : Visibility.Hidden}",
+            Visibility: "{= (bool)${=this.IsMouseOver} ? Visibility.Visible : Visibility.Hidden }",
         }
     }, {
         $: "Visibility IamGreenToo",

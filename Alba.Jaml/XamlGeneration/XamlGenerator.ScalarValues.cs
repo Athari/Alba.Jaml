@@ -54,7 +54,7 @@ namespace Alba.Jaml.XamlGeneration
         /// <summary>Match sub-cinding in curly braces, match after until either another sub-binding,
         /// or end of string, or comma (if ${} postfix is not present).</summary>
         private static readonly Regex ReSubBinding = new Regex(
-            @"  \$  (?<SubBinding>" + ReInCurlyBraces + @")  (?<Between>.*?)  (?= \$\{ | $ | ,(?!.*\$\{\}) )",
+            @"  \$  (?<SubBinding>" + ReInCurlyBraces + @")",
             DefaultReOptions);
 
         /// <summary>Get XAttribute for scalar property: attribute="scalarValue" (can also return object if value is multi-binding).</summary>
@@ -140,29 +140,39 @@ namespace Alba.Jaml.XamlGeneration
 
         private object FormatComplexBindingScalarValue (string value)
         {
-            var mBinding = ReGenericBinding.Match(value);
+            Match mBinding = ReGenericBinding.Match(value);
             if (!mBinding.Success)
                 return null;
 
-            var mSubBindings = ReSubBinding.Matches(mBinding.Groups["Expression"].Value);
-            if (mSubBindings.Count == 0)
+            string strBinding = mBinding.Groups["Expression"].Value;
+            MatchCollection mSubs = ReSubBinding.Matches(strBinding);
+            if (mSubs.Count == 0)
                 return null;
 
+            int termPos = strBinding.IndexOf(StrExpressionPostfix, StringComparison.InvariantCulture);
+            if (termPos == -1) {
+                Group groupSubLast = mSubs[mSubs.Count - 1].Groups["SubBinding"];
+                termPos = strBinding.IndexOf(',', groupSubLast.Index + groupSubLast.Length);
+            }
+            if (termPos == -1)
+                termPos = strBinding.Length;
+
+            var sbExpr = new StringBuilder(mSubs[0].Result("$`"));
             var conv = new ConverterInfo {
                 Name = string.Format(CultureInfo.InvariantCulture, "_jaml_{0}Converter", ClassName),
                 SubBindings = new List<string>(),
             };
-            var sbExpr = new StringBuilder(mSubBindings[0].Result("$`"));
-            for (int i = 0; i < mSubBindings.Count; ++i) {
-                sbExpr.AppendFormat(CultureInfo.InvariantCulture, "(values[{0}]){1}",
-                    i, mSubBindings[i].Groups["Between"].Value);
-                string subBindingValue = mSubBindings[i].Groups["SubBinding"].Value;
-                string subBindingScalarValue = FormatSimpleBindingScalarValue(subBindingValue);
-                conv.SubBindings.Add(FormatScalarPropertyValue(subBindingScalarValue ?? subBindingValue));
+            for (int i = 0; i < mSubs.Count; ++i) {
+                string strBetween = GetStringBetweenCaptures(mSubs[i], i + 1 < mSubs.Count ? mSubs[i + 1] : null,
+                    strBinding, termPos);
+                sbExpr.AppendFormat(CultureInfo.InvariantCulture, "(values[{0}]){1}", i, strBetween);
+                string strSub = mSubs[i].Groups["SubBinding"].Value;
+                conv.SubBindings.Add(
+                    FormatScalarPropertyValue(FormatSimpleBindingScalarValue(strSub) ?? strSub));
             }
-            conv.Expression = sbExpr.ToString();
+            conv.Expression = sbExpr.ToString().Trim();
 
-            string afterExpr = mSubBindings[mSubBindings.Count - 1].Result("$'");
+            string afterExpr = strBinding.Substring(termPos);
             if (afterExpr.StartsWith(StrExpressionPostfix))
                 afterExpr = afterExpr.Substring(StrExpressionPostfix.Length);
             afterExpr = afterExpr.Trim();
@@ -172,8 +182,6 @@ namespace Alba.Jaml.XamlGeneration
 
             if (conv.IsSingle) {
                 string binding = conv.SubBindings[0].Trim();
-                if (binding[binding.Length - 1] != '}')
-                    throw new InvalidOperationException(string.Format("Binding is invalid: '{0}'.", binding));
                 return string.Format(CultureInfo.InvariantCulture, "{0}, Converter={1}{2}}}",
                     binding.Substring(0, binding.Length - 1),
                     FormatGeneratedConverterReference(conv.Name),
@@ -181,6 +189,15 @@ namespace Alba.Jaml.XamlGeneration
             }
             else
                 return null; // TODO Generate MultiBinding using MePullParser
+        }
+
+        private static string GetStringBetweenCaptures (Capture current, Capture next, string str, int termPos)
+        {
+            int lastIndex = current.Index + current.Length;
+            string strBetween = next != null
+                ? str.Substring(lastIndex, next.Index - lastIndex)
+                : str.Substring(lastIndex, termPos - lastIndex);
+            return strBetween;
         }
 
         private string FormatGeneratedConverterReference (string name)

@@ -50,7 +50,7 @@ namespace Alba.JamlTestApp
             {
                 if (values.Any(v => ReferenceEquals(v, DependencyProperty.UnsetValue)))
                     return DependencyProperty.UnsetValue;
-                return string.Format("IsMouseOver={0}\nIsDirectlyMouseOver={1}", (values[0]), (values[1])) ;
+                return string.Format("IsMouseOver={0}\nIsDirectlyMouseOver={1}", (values[0]), (values[1]));
             }
 
             public object[] ConvertBack (object value, Type[] targetTypes, object param, CultureInfo culture)
