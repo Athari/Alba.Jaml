@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Globalization;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using Alba.Jaml.MSInternal;
 using Newtonsoft.Json.Linq;
 
 namespace Alba.Jaml.XamlGeneration

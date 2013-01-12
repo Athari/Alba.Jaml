@@ -99,9 +99,9 @@ namespace Alba.Jaml.MSInternal
                     break;
 
                 default:
-                    this.SetBrokenRuleString("Arguments ::= @ (PositionalArgs ( ',' NamedArgs)?) | NamedArgs");
-                    break;
-                    /*foreach (XamlNode iteratorVariable1 in this.P_PositionalArgs(iteratorVariable0)) {
+                    /*this.SetBrokenRuleString("Arguments ::= @ (PositionalArgs ( ',' NamedArgs)?) | NamedArgs");
+                    break;*/
+                    foreach (XamlNode iteratorVariable1 in this.P_PositionalArgs(iteratorVariable0)) {
                         yield return iteratorVariable1;
                     }
                     f.found = iteratorVariable0.found;
@@ -114,7 +114,7 @@ namespace Alba.Jaml.MSInternal
                             yield return iteratorVariable2;
                         }
                     }
-                    break;*/
+                    break;
             }
         }
 
@@ -143,12 +143,12 @@ namespace Alba.Jaml.MSInternal
                             break;
                         }
                         default:
-                            this.SetBrokenRuleString("MarkupExtension ::= '{' TYPENAME @(Arguments)? '}'");
-                            break;
-                            /*yield return this.Logic_EndObject();
+                            /*this.SetBrokenRuleString("MarkupExtension ::= '{' TYPENAME @(Arguments)? '}'");
+                            break;*/
+                            yield return this.Logic_EndObject();
                             this.NextToken();
                             f.found = true;
-                            break;*/
+                            break;
                     }
                     if (iteratorVariable1.found && this.Expect(MeTokenType.Close, "MarkupExtension ::= '{' TYPENAME (Arguments)? @'}'")) {
                         yield return this.Logic_EndObject();
@@ -198,12 +198,12 @@ namespace Alba.Jaml.MSInternal
                         break;
                     }
                     default:
-                        this.SetBrokenRuleString("NamedArg ::= PROPERTYNAME '=' @(STRING | QUOTEDMARKUPEXTENSION | MarkupExtension)");
-                        break;
-                        /*yield return this.Logic_Text();
+                        /*this.SetBrokenRuleString("NamedArg ::= PROPERTYNAME '=' @(STRING | QUOTEDMARKUPEXTENSION | MarkupExtension)");
+                        break;*/
+                        yield return this.Logic_Text();
                         f.found = true;
                         this.NextToken();
-                        break;*/
+                        break;
                 }
                 yield return this.Logic_EndMember();
             }
@@ -249,10 +249,10 @@ namespace Alba.Jaml.MSInternal
                     break;
                 }
                 default: {
-                    //int num2;
-                    this.SetBrokenRuleString("PositionalArgs ::= @ (Value (',' PositionalArgs)?) | NamedArg");
-                    break;
-                    /*this._context.CurrentArgCount = (num2 = this._context.CurrentArgCount) + 1;
+                    int num2;
+                    /*this.SetBrokenRuleString("PositionalArgs ::= @ (Value (',' PositionalArgs)?) | NamedArg");
+                    break;*/
+                    this._context.CurrentArgCount = (num2 = this._context.CurrentArgCount) + 1;
                     if (num2 == 0) {
                         yield return this.Logic_StartPositionalParameters();
                     }
@@ -277,7 +277,7 @@ namespace Alba.Jaml.MSInternal
                             }
                         }
                     }
-                    break;*/
+                    break;
                 }
             }
         }
@@ -305,11 +305,11 @@ namespace Alba.Jaml.MSInternal
                     break;
                 }
                 default:
-                    break;
-                    /*yield return this.Logic_Text();
+                    //break;
+                    yield return this.Logic_Text();
                     f.found = true;
                     this.NextToken();
-                    break;*/
+                    break;
             }
         }
 
