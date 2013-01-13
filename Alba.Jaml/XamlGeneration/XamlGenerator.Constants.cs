@@ -13,6 +13,7 @@ namespace Alba.Jaml.XamlGeneration
         public readonly XNamespace Ns = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
         public readonly XNamespace NsX = XamlLanguage.Xaml2006Namespace;
 
+        private const string NsPrefix = "";
         private const string NsXPrefix = XamlLanguage.PreferredPrefix;
         private const string NsLocalPrefix = "my";
         private const string IndentChars = "    ";

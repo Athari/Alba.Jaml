@@ -197,12 +197,13 @@ namespace Alba.Jaml.XamlGeneration
             if (conv.IsSingle) {
                 string binding = conv.SubBindings[0].Trim();
                 return string.Format(CultureInfo.InvariantCulture, "{0}, Converter={1}{2}}}",
-                    binding.Substring(0, binding.Length - 1),
+                    binding.Substring(0, binding.Length - 1), // trim last '}'
                     FormatGeneratedConverterReference(conv.Name),
                     afterExpr);
             }
-            else
-                return null; // TODO Generate MultiBinding using MePullParser
+            else {
+                return GetXElementMultiBinding(conv, afterExpr);
+            }
         }
 
         private static string GetStringBetweenCaptures (Capture current, Capture next, string str, int termPos)

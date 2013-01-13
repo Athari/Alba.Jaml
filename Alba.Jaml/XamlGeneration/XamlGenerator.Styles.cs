@@ -49,10 +49,12 @@ namespace Alba.Jaml.XamlGeneration
 
             // create JObject setter
             var jsetter = new JObject(new JProperty(pnDollar, "Setter"));
-            if (targetName != null)
-                jsetter.Add(new JProperty("TargetName", targetName));
-            jsetter.Add(new JProperty("Property", propName));
-            jsetter.Add(new JProperty("Value", prop.Value));
+            {
+                if (targetName != null)
+                    jsetter.Add(new JProperty("TargetName", targetName));
+                jsetter.Add(new JProperty("Property", propName));
+                jsetter.Add(new JProperty("Value", prop.Value));
+            }
             return jsetter;
         }
     }

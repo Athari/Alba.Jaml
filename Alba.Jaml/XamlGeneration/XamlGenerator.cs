@@ -23,6 +23,8 @@ namespace Alba.Jaml.XamlGeneration
         private readonly JObject _data;
         private readonly Dictionary<JToken, TokenTypeInfo> _typeInfos = new Dictionary<JToken, TokenTypeInfo>();
         private readonly List<IPropertyShortcut> _propertyShortcuts;
+        private readonly XamlSchemaContext _xamlSchemaContext;
+        private readonly XamlParserContext _xamlParserContext;
 
         public readonly XNamespace NsMy;
 
@@ -32,11 +34,17 @@ namespace Alba.Jaml.XamlGeneration
             NameSpace = nameSpace;
             ClassName = className;
             Converters = new List<ConverterInfo>();
+            NsMy = String.Format("{0}:{1}", KnownStrings.UriClrNamespace, NameSpace);
+
+            _xamlSchemaContext = new XamlSchemaContext( /*new[] { PresentationCore, PresentationFramework }*/);
+            _xamlParserContext = new XamlParserContext(_xamlSchemaContext, GetType().Assembly);
+            _xamlParserContext.AddNamespacePrefix(NsPrefix, Ns.NamespaceName);
+            _xamlParserContext.AddNamespacePrefix(NsXPrefix, NsX.NamespaceName);
+
             _propertyShortcuts = GetType().Assembly.GetTypes()
                 .Where(t => t.GetInterface(typeof(IPropertyShortcut).FullName) != null)
                 .Select(t => (IPropertyShortcut)Activator.CreateInstance(t))
                 .ToList();
-            NsMy = String.Format("{0}:{1}", KnownStrings.UriClrNamespace, NameSpace);
         }
 
         public string ClassName { get; private set; }
@@ -197,18 +205,6 @@ namespace Alba.Jaml.XamlGeneration
             return new XElement(Ns + FormatComplexPropertyName(prop),
                 GetObjectOrEnum(prop.Value).Select(GetXObject)
                 );
-        }
-
-        private Tuple<string, Type, Type> GetDefaultContentProperty (Type objType)
-        {
-            var attrContProp = objType.GetCustomAttribute<ContentPropertyAttribute>(true);
-            if (attrContProp == null)
-                throw new InvalidOperationException(String.Format("Content property for type {0} not found.", objType.FullName));
-            Type itemType = GetPropertyItemType(objType, attrContProp.Name);
-            if (DefaultItemTypes.ContainsKey(itemType))
-                itemType = DefaultItemTypes[itemType];
-            Type contType = GetPropertyType(objType, attrContProp.Name);
-            return new Tuple<string, Type, Type>(attrContProp.Name, itemType, contType);
         }
 
         /// <summary>Get types of objects contained in property: type of property for simple property,
