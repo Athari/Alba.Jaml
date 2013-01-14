@@ -5,8 +5,8 @@ using System.Linq;
 using System.Reflection;
 using System.Windows.Markup;
 using System.Xaml;
-using System.Xml.Linq;
 using Alba.Jaml.MSInternal;
+using Newtonsoft.Json.Linq;
 using XamlLanguage = Alba.Jaml.MSInternal.XamlLanguage;
 
 // ReSharper disable TooWideLocalVariableScope
@@ -14,40 +14,44 @@ namespace Alba.Jaml.XamlGeneration
 {
     public partial class XamlGenerator
     {
-        private XElement GetXElementMultiBinding (ConverterInfo conv, string afterExpr)
+        private const string pnConverter = "Converter";
+
+        private JToken GetJObjectMultiBinding (ConverterInfo conv, string afterExpr)
         {
             if (afterExpr.StartsWith(","))
                 afterExpr = afterExpr.Substring(1).Trim();
             string strMultiBinding = string.Format("{{MultiBinding {0}}}", afterExpr);
 
-            XElement xmlMultiBinding = GetXElementFromMarkupExt(strMultiBinding);
-            xmlMultiBinding.Add(new XAttribute("Converter", FormatGeneratedConverterReference(conv.Name)));
-            foreach (string strSubBinding in conv.SubBindings)
-                xmlMultiBinding.Add(GetXElementFromMarkupExt(strSubBinding));
+            JObject xmlMultiBinding = GetJObjectFromMarkupExt(strMultiBinding);
+            {
+                xmlMultiBinding.Add(pnConverter, FormatGeneratedConverterReference(conv.Name));
+                xmlMultiBinding.Add(pnContent, new JArray());
+                {
+                    var content = (JArray)xmlMultiBinding[pnContent];
+                    foreach (string strSubBinding in conv.SubBindings)
+                        content.Add(GetJObjectFromMarkupExt(strSubBinding));
+                }
+            }
             return xmlMultiBinding;
         }
 
-        private XElement GetXElementFromMarkupExt (string strMarkup)
+        private JObject GetJObjectFromMarkupExt (string strMarkup)
         {
-            XElement result = null;
+            JObject result = null;
             XamlNodeStackItem obj, member;
             var posParams = new List<string>();
             var stack = new List<XamlNodeStackItem>();
 
-            if (_xamlParserContext.FindNamespaceByPrefix(NsPrefix) == null)
-                _xamlParserContext.AddNamespacePrefix(NsPrefix, Ns.NamespaceName);
-            if (_xamlParserContext.FindNamespaceByPrefix(NsXPrefix) == null)
-                _xamlParserContext.AddNamespacePrefix(NsXPrefix, NsX.NamespaceName);
-            var markupExtParser = new MePullParser(_xamlParserContext);
-
-            foreach (XamlNode node in markupExtParser.Parse(strMarkup, 0, 0)) {
+            foreach (XamlNode node in GetMarkupExtParser().Parse(strMarkup, 0, 0)) {
                 switch (node.NodeType) {
                     case XamlNodeType.None:
                         break;
 
                     case XamlNodeType.StartObject:
+                        string ns = FindPrefixByNamespace(node.XamlType.PreferredXamlNamespace);
                         stack.Add(new XamlNodeStackItem(node,
-                            new XElement(XNamespace.Get(node.XamlType.PreferredXamlNamespace) + node.XamlType.Name)));
+                            new JObject(new JProperty(pnDollar,
+                                ns != "" ? string.Format("{0}:{1}", ns, node.XamlType.Name) : node.XamlType.Name))));
                         break;
 
                     case XamlNodeType.GetObject:
@@ -56,27 +60,27 @@ namespace Alba.Jaml.XamlGeneration
                     case XamlNodeType.EndObject:
                         obj = stack.Last();
                         if (stack.Count == 1)
-                            result = obj.XElement;
+                            result = obj.JObject;
                         stack.RemoveAt(stack.Count - 1);
                         if (stack.Count > 0) {
                             member = stack.Last();
-                            if (member.XAttribute != null)
-                                member.XAttribute.Value = FormatXElementAsMarkupExt(obj.XElement);
+                            if (member.JProperty != null)
+                                member.JProperty.Value = FormatJObjectAsMarkupExt(obj.JObject);
                         }
                         break;
 
                     case XamlNodeType.StartMember:
-                        obj = stack.Last(t => t.XElement != null);
-                        member = new XamlNodeStackItem(node, new XAttribute(node.Member.Name, ""));
-                        obj.XElement.Add(member.XAttribute);
+                        obj = stack.Last(t => t.JObject != null);
+                        member = new XamlNodeStackItem(node, new JProperty(node.Member.Name, null));
+                        obj.JObject.Add(member.JProperty);
                         stack.Add(member);
                         break;
 
                     case XamlNodeType.EndMember:
                         member = stack.Last();
-                        if (member.XAttribute.Name == XamlLanguage.PositionalParameters.Name) {
-                            obj = stack.Last(t => t.XElement != null);
-                            member.XAttribute.Remove();
+                        if (member.JProperty.Name == XamlLanguage.PositionalParameters.Name) {
+                            obj = stack.Last(t => t.JObject != null);
+                            member.JProperty.Remove();
                             AddPositionalParams(obj, posParams);
                             posParams.Clear();
                         }
@@ -86,34 +90,34 @@ namespace Alba.Jaml.XamlGeneration
                     case XamlNodeType.Value:
                         member = stack.Last();
                         string value = string.Format(CultureInfo.InvariantCulture, "{0}", node.Value);
-                        if (member.XAttribute.Name == XamlLanguage.PositionalParameters.Name)
+                        if (member.JProperty.Name == XamlLanguage.PositionalParameters.Name)
                             posParams.Add(value);
                         else
-                            member.XAttribute.Value = value;
+                            member.JProperty.Value = value;
                         break;
 
                     case XamlNodeType.NamespaceDeclaration:
                         throw new NotImplementedException();
 
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        throw new InvalidOperationException();
                 }
             }
             return result;
         }
 
-        private string FormatXElementAsMarkupExt (XElement xml)
+        private string FormatJObjectAsMarkupExt (JObject jobj)
         {
-            string xmlName = GetTypeByName(xml.Name.LocalName).FullName.StartsWith(XamlLanguage.SWMNamespace)
-                ? string.Format("{0}:{1}", NsXPrefix, xml.Name.LocalName) : xml.Name.LocalName;
-            if (xmlName.EndsWith(KnownStrings.Extension))
-                xmlName = xmlName.Substring(0, xmlName.Length - KnownStrings.Extension.Length);
-            return xml.HasAttributes
-                ? string.Format("{{{0} {1}}}", xmlName,
-                    string.Join(", ", xml.Attributes().Select(a =>
-                        string.Format(CultureInfo.InvariantCulture, "{0}={1}",
-                            a.Name.LocalName, a.Value))))
-                : string.Format("{{{0}}}", xmlName);
+            /*string xmlName = GetTypeByName(typeName).FullName.StartsWith(XamlLanguage.SWMNamespace)
+                ? string.Format("{0}:{1}", NsXPrefix, jobj.Name.LocalName) : jobj.Name.LocalName;*/
+            var typeName = (string)jobj[pnDollar];
+            if (typeName.EndsWith(KnownStrings.Extension))
+                typeName = typeName.Substring(0, typeName.Length - KnownStrings.Extension.Length);
+            return jobj.HasValues
+                ? string.Format("{{{0} {1}}}", typeName,
+                    string.Join(", ", jobj.Properties().Where(p => p.Name != pnDollar).Select(a =>
+                        string.Format(CultureInfo.InvariantCulture, "{0}={1}", a.Name, a.Value))))
+                : string.Format("{{{0}}}", typeName);
         }
 
         private static void AddPositionalParams (XamlNodeStackItem obj, List<string> posParams)
@@ -131,27 +135,44 @@ namespace Alba.Jaml.XamlGeneration
                     paramName = paramProp.Name;
                 else
                     paramName = char.ToUpper(paramName[0]) + paramName.Substring(1);
-                obj.XElement.Add(new XAttribute(paramName, posParams[i]));
+                obj.JObject.Add(new JProperty(paramName, posParams[i]));
             }
+        }
+
+        private MePullParser GetMarkupExtParser ()
+        {
+            var xamlParserContext = new XamlParserContext(_xamlSchemaContext, GetType().Assembly);
+            xamlParserContext.AddNamespacePrefix(NsPrefix, Ns.NamespaceName);
+            xamlParserContext.AddNamespacePrefix(NsXPrefix, NsX.NamespaceName);
+            return new MePullParser(xamlParserContext);
+        }
+
+        private string FindPrefixByNamespace (string ns)
+        {
+            if (ns == Ns.NamespaceName)
+                return NsPrefix;
+            else if (ns == NsX.NamespaceName)
+                return NsXPrefix;
+            throw new ArgumentException(string.Format("Invalid namespace: '{0}'.", ns), "ns");
         }
 
         private class XamlNodeStackItem
         {
             public XamlNode Node { get; set; }
-            private object XItem { get; set; }
-            public XElement XElement
+            private JToken JToken { get; set; }
+            public JObject JObject
             {
-                get { return XItem as XElement; }
+                get { return JToken as JObject; }
             }
-            public XAttribute XAttribute
+            public JProperty JProperty
             {
-                get { return XItem as XAttribute; }
+                get { return JToken as JProperty; }
             }
 
-            public XamlNodeStackItem (XamlNode node, object xItem)
+            public XamlNodeStackItem (XamlNode node, JToken token)
             {
                 Node = node;
-                XItem = xItem;
+                JToken = token;
             }
         }
     }

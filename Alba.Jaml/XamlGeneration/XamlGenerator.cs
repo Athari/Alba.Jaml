@@ -24,7 +24,6 @@ namespace Alba.Jaml.XamlGeneration
         private readonly Dictionary<JToken, TokenTypeInfo> _typeInfos = new Dictionary<JToken, TokenTypeInfo>();
         private readonly List<IPropertyShortcut> _propertyShortcuts;
         private readonly XamlSchemaContext _xamlSchemaContext;
-        private readonly XamlParserContext _xamlParserContext;
 
         public readonly XNamespace NsMy;
 
@@ -37,9 +36,6 @@ namespace Alba.Jaml.XamlGeneration
             NsMy = String.Format("{0}:{1}", KnownStrings.UriClrNamespace, NameSpace);
 
             _xamlSchemaContext = new XamlSchemaContext( /*new[] { PresentationCore, PresentationFramework }*/);
-            _xamlParserContext = new XamlParserContext(_xamlSchemaContext, GetType().Assembly);
-            _xamlParserContext.AddNamespacePrefix(NsPrefix, Ns.NamespaceName);
-            _xamlParserContext.AddNamespacePrefix(NsXPrefix, NsX.NamespaceName);
 
             _propertyShortcuts = GetType().Assembly.GetTypes()
                 .Where(t => t.GetInterface(typeof(IPropertyShortcut).FullName) != null)
@@ -98,9 +94,9 @@ namespace Alba.Jaml.XamlGeneration
                 xAttrVisibility,
                 xAttrsIds,
                 xAttrsShortProps,
+                allProps.Where(IsComplexProperty).Select(GetXElementComplexProperty).ToArray(),
                 allProps.Where(IsScalarProperty).Select(GetXAttrScalarProperty).ToArray(),
                 allProps.Where(IsScalarContentProperty).Select(GetXTextScalarPropertyContent).ToArray(),
-                allProps.Where(IsComplexProperty).Select(GetXElementComplexObjectProperty).ToArray(),
                 ctx.JContent == null ? null : GetObjectOrEnum(ctx.JContent).Select(GetXObject).ToArray()
                 );
         }
@@ -200,7 +196,7 @@ namespace Alba.Jaml.XamlGeneration
         }
 
         /// <summary>Get XElement for complex properties: &lt;attribute&gt;&lt;complexValue/&gt;&lt;/attribute&gt;.</summary>
-        private XElement GetXElementComplexObjectProperty (JProperty prop)
+        private XElement GetXElementComplexProperty (JProperty prop)
         {
             return new XElement(Ns + FormatComplexPropertyName(prop),
                 GetObjectOrEnum(prop.Value).Select(GetXObject)

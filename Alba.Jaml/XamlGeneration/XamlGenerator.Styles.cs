@@ -9,28 +9,37 @@ namespace Alba.Jaml.XamlGeneration
     {
         private const string pnSet = "set";
         private const string pnOn = "on";
+        private const string pnSetters = "Setters";
+        private const string pnTriggers = "Triggers";
+        private const string pnProperty = "Property";
+        private const string pnValue = "Value";
+        private const string pnTargetName = "TargetName";
         private static readonly Regex ReSetterWithTarget = new Regex(
             @"^  ref\.  (?<TargetName>" + ReIdent + @")  \.  (?<PropName>.+)  $",
             DefaultReOptions);
 
         private void ProcessStyleObject (ObjectContext ctx)
         {
-            var jobj = ctx.JObj;
-            if (jobj[pnSet] != null) {
-                if (jobj[pnContent] == null)
-                    jobj[pnContent] = new JArray();
-                var jsetters = ((JObject)jobj[pnSet]).Properties().Select(GetJObjectStyleSetter).ToArray();
-                ((JContainer)jobj[pnContent]).Add(jsetters);
+            JObject jobj = ctx.JObj;
+            Type targetType = GetTypeInfo(jobj).TargetType;
 
-                Type targetType = GetTypeInfo(jobj).TargetType;
-                foreach (JObject jsetter in jobj[pnContent]) {
-                    TokenTypeInfo valueTypeInfo = GetTypeInfo(jsetter.Property("Value"));
-                    valueTypeInfo.PropertyItemType = GetPropertyItemType(targetType, (string)jsetter["Property"]);
+            if (jobj[pnSet] != null) {
+                if (jobj[pnSetters] == null)
+                    jobj[pnSetters] = new JArray();
+                var jsetters = ((JObject)jobj[pnSet]).Properties().Select(GetJObjectStyleSetter).ToArray();
+                ((JContainer)jobj[pnSetters]).Add(jsetters);
+                foreach (JObject jsetter in jobj[pnSetters]) {
+                    TokenTypeInfo valueTypeInfo = GetTypeInfo(jsetter.Property(pnValue));
+                    valueTypeInfo.PropertyItemType = GetPropertyItemType(targetType, (string)jsetter[pnProperty]);
                 }
                 jobj.Remove(pnSet);
             }
+
             if (jobj[pnOn] != null) {
-                // TODO Add style triggers
+                if (jobj[pnTriggers] == null)
+                    jobj[pnTriggers] = new JArray();
+                var jtriggers = ((JObject)jobj[pnOn]).Properties().Select(GetJObjectStyleTrigger).ToArray();
+                ((JContainer)jobj[pnTriggers]).Add(jtriggers);
                 //jobj["Triggers"] = new JArray(((JObject)ctx.JContent).Properties().Select(GetJObjectStyleSetter));
                 jobj.Remove(pnOn);
             }
@@ -51,11 +60,16 @@ namespace Alba.Jaml.XamlGeneration
             var jsetter = new JObject(new JProperty(pnDollar, "Setter"));
             {
                 if (targetName != null)
-                    jsetter.Add(new JProperty("TargetName", targetName));
-                jsetter.Add(new JProperty("Property", propName));
-                jsetter.Add(new JProperty("Value", prop.Value));
+                    jsetter.Add(new JProperty(pnTargetName, targetName));
+                jsetter.Add(new JProperty(pnProperty, propName));
+                jsetter.Add(new JProperty(pnValue, prop.Value));
             }
             return jsetter;
+        }
+
+        private object GetJObjectStyleTrigger (JProperty prop)
+        {
+            return null;
         }
     }
 }

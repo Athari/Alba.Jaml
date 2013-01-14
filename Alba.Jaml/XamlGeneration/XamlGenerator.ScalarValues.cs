@@ -61,9 +61,12 @@ namespace Alba.Jaml.XamlGeneration
         private object GetXAttrScalarProperty (JProperty prop)
         {
             if (prop.Value.Type == JTokenType.String && prop.Value.ToString().StartsWith("{="))
-                return GetXBindingPropertyValue(prop);
-            else
+                ProcessBindingPropertyValue(prop);
+
+            if (IsScalarProperty(prop))
                 return new XAttribute(FormatScalarPropertyName(prop), FormatScalarPropertyValue(prop.Value));
+            else
+                return GetXElementComplexProperty(prop);
         }
 
         private string FormatScalarPropertyValue (JToken value)
@@ -86,59 +89,56 @@ namespace Alba.Jaml.XamlGeneration
             }
         }
 
-        private object GetXBindingPropertyValue (JProperty prop)
+        private void ProcessBindingPropertyValue (JProperty prop)
         {
             string value = prop.Value.ToString();
 
-            string scalarValue = FormatSimpleBindingScalarValue(value);
-            if (scalarValue != null)
-                return new XAttribute(FormatScalarPropertyName(prop), FormatScalarPropertyValue(scalarValue));
-
-            object complexValue = FormatComplexBindingScalarValue(value);
-            if (complexValue == null)
-                return new XAttribute(FormatScalarPropertyName(prop), FormatScalarPropertyValue(value));
-            else if (complexValue is string)
-                return new XAttribute(FormatScalarPropertyName(prop), complexValue);
-            else
-                return new XElement(Ns + FormatComplexPropertyName(prop), complexValue);
+            string simpleValue = FormatSimpleBindingValue(value);
+            if (simpleValue != null)
+                prop.Value = simpleValue;
+            else {
+                JToken complexValue = GetJTokenComplexBinding(value);
+                if (complexValue != null)
+                    prop.Value = complexValue;
+            }
         }
 
-        private string FormatSimpleBindingScalarValue (string value)
+        private string FormatSimpleBindingValue (string value)
         {
             Match mBinding = ReBindingElementName.Match(value);
             if (mBinding.Success) {
-                return String.IsNullOrEmpty(mBinding.Groups["Path"].Value)
+                return string.IsNullOrEmpty(mBinding.Groups["Path"].Value)
                     ? mBinding.Result("{Binding ElementName=${ElementName}$'")
                     : mBinding.Result("{Binding ${Path}, ElementName=${ElementName}$'");
             }
             mBinding = ReBindingSelf.Match(value);
             if (mBinding.Success) {
-                return String.IsNullOrEmpty(mBinding.Groups["Path"].Value)
+                return string.IsNullOrEmpty(mBinding.Groups["Path"].Value)
                     ? mBinding.Result("{Binding RelativeSource={RelativeSource Self}$'")
                     : mBinding.Result("{Binding ${Path}, RelativeSource={RelativeSource Self}$'");
             }
             mBinding = ReBindingTemplatedParent.Match(value);
             if (mBinding.Success) {
-                return String.IsNullOrEmpty(mBinding.Groups["Path"].Value)
+                return string.IsNullOrEmpty(mBinding.Groups["Path"].Value)
                     ? mBinding.Result("{Binding RelativeSource={RelativeSource TemplatedParent}$'")
                     : mBinding.Result("{Binding ${Path}, RelativeSource={RelativeSource TemplatedParent}$'");
             }
             mBinding = ReBindingAncestorType.Match(value);
             if (mBinding.Success) {
-                return String.IsNullOrEmpty(mBinding.Groups["Path"].Value)
+                return string.IsNullOrEmpty(mBinding.Groups["Path"].Value)
                     ? mBinding.Result("{Binding RelativeSource={RelativeSource AncestorType=${AncestorType}}$'")
                     : mBinding.Result("{Binding ${Path}, RelativeSource={RelativeSource AncestorType=${AncestorType}}$'");
             }
             mBinding = ReBindingSource.Match(value);
             if (mBinding.Success) {
-                return String.IsNullOrEmpty(mBinding.Groups["Path"].Value)
+                return string.IsNullOrEmpty(mBinding.Groups["Path"].Value)
                     ? mBinding.Result("{Binding Source=${Source}$'")
                     : mBinding.Result("{Binding ${Path}, Source=${Source}$'");
             }
             return null;
         }
 
-        private object FormatComplexBindingScalarValue (string value)
+        private JToken GetJTokenComplexBinding (string value)
         {
             Match mBinding = ReGenericBinding.Match(value);
             if (!mBinding.Success)
@@ -152,7 +152,7 @@ namespace Alba.Jaml.XamlGeneration
             Group groupSubLast = mSubs[mSubs.Count - 1].Groups["SubBinding"];
             int termPos = GetComplexBindingTermPos(strBinding, groupSubLast);
             ConverterInfo conv = AddComplexBindingConverter(mSubs, strBinding, termPos);
-            return FormatComplexBindingScalarValueFromConverter(conv, strBinding, termPos);
+            return GetJTokenComplexBindingFromConverter(conv, strBinding, termPos);
         }
 
         private static int GetComplexBindingTermPos (string strBinding, Group groupSubLast)
@@ -178,7 +178,7 @@ namespace Alba.Jaml.XamlGeneration
                 sbExpr.AppendFormat(CultureInfo.InvariantCulture, "(values[{0}]){1}", i, strBetween);
                 string strSub = mSubs[i].Groups["SubBinding"].Value;
                 conv.SubBindings.Add(
-                    FormatScalarPropertyValue(FormatSimpleBindingScalarValue(strSub) ?? strSub));
+                    FormatScalarPropertyValue(FormatSimpleBindingValue(strSub) ?? strSub));
             }
             conv.Expression = sbExpr.ToString().Trim();
 
@@ -187,7 +187,7 @@ namespace Alba.Jaml.XamlGeneration
             return conv;
         }
 
-        private object FormatComplexBindingScalarValueFromConverter (ConverterInfo conv, string strBinding, int termPos)
+        private JToken GetJTokenComplexBindingFromConverter (ConverterInfo conv, string strBinding, int termPos)
         {
             string afterExpr = strBinding.Substring(termPos);
             if (afterExpr.StartsWith(StrExpressionPostfix))
@@ -202,7 +202,7 @@ namespace Alba.Jaml.XamlGeneration
                     afterExpr);
             }
             else {
-                return GetXElementMultiBinding(conv, afterExpr);
+                return GetJObjectMultiBinding(conv, afterExpr);
             }
         }
 

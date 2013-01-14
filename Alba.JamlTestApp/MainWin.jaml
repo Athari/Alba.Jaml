@@ -17,8 +17,16 @@
             TextOptions$TextFormattingMode: "Display",
         },
         on: {
-            "" : {
-            }
+            "{=this.IsMouseOver}": {
+                set: {
+                    Background: "Fuchsia"
+                }
+            },
+            "{= ${this.Visibility} == Visibility.Hidden }": {
+                set: {
+                    Width: 20, Height: 20
+                }
+            },
         }
     },{
         $: "Style stybtnGreen Button",

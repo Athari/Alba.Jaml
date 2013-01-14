@@ -10,38 +10,43 @@
         <Style
             x:Key="stybtnRed"
             TargetType="{x:Type Button}">
-            <Setter
-                Property="Template">
-                <Setter.Value>
-                    <ControlTemplate
-                        TargetType="Button">
-                        <StackPanel />
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-            <Setter
-                TargetName="ctlName"
-                Property="Background"
-                Value="Red" />
-            <Setter
-                Property="Foreground"
-                Value="Blue" />
-            <Setter
-                Property="Content"
-                Value="{x:Null}" />
-            <Setter
-                Property="TextOptions.TextFormattingMode"
-                Value="Display" />
+            <Style.Setters>
+                <Setter
+                    Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate
+                            TargetType="Button">
+                            <StackPanel />
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Setter
+                    TargetName="ctlName"
+                    Property="Background"
+                    Value="Red" />
+                <Setter
+                    Property="Foreground"
+                    Value="Blue" />
+                <Setter
+                    Property="Content"
+                    Value="{x:Null}" />
+                <Setter
+                    Property="TextOptions.TextFormattingMode"
+                    Value="Display" />
+            </Style.Setters>
+            <Style.Triggers />
         </Style>
         <Style
             x:Key="stybtnGreen"
             TargetType="{x:Type Button}">
-            <Setter
-                Property="Background"
-                Value="Green" />
-            <Setter
-                Property="Foreground"
-                Value="Yellow" />
+            <Style.Setters>
+                <Setter
+                    Property="Background"
+                    Value="Green" />
+                <Setter
+                    Property="Foreground"
+                    Value="Yellow" />
+            </Style.Setters>
         </Style>
         <DataTemplate
             DataType="{x:Type Visibility}">
