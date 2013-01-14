@@ -34,7 +34,51 @@
                     Property="TextOptions.TextFormattingMode"
                     Value="Display" />
             </Style.Setters>
-            <Style.Triggers />
+            <Style.Triggers>
+                <DataTrigger
+                    Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}"
+                    Value="True">
+                    <DataTrigger.Setters>
+                        <Setter
+                            Property="Background"
+                            Value="Fuchsia" />
+                    </DataTrigger.Setters>
+                </DataTrigger>
+                <DataTrigger
+                    Binding="{Binding Visibility, RelativeSource={RelativeSource Self}, Converter={x:Static my:MainWin._jaml_MainWinConverter}}"
+                    Value="True">
+                    <DataTrigger.Setters>
+                        <Setter
+                            Property="Width"
+                            Value="20" />
+                        <Setter
+                            Property="Height"
+                            Value="20" />
+                    </DataTrigger.Setters>
+                </DataTrigger>
+                <DataTrigger
+                    Value="True">
+                    <DataTrigger.Binding>
+                        <MultiBinding
+                            Converter="{x:Static my:MainWin._jaml_MainWinConverter1}">
+                            <Binding
+                                Path="IsMouseOver"
+                                RelativeSource="{RelativeSource Mode=Self}" />
+                            <Binding
+                                Path="IsMouseDirectlyOver"
+                                RelativeSource="{RelativeSource Mode=Self}" />
+                        </MultiBinding>
+                    </DataTrigger.Binding>
+                    <DataTrigger.Setters>
+                        <Setter
+                            Property="Width"
+                            Value="20" />
+                        <Setter
+                            Property="Height"
+                            Value="20" />
+                    </DataTrigger.Setters>
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
         <Style
             x:Key="stybtnGreen"
@@ -53,11 +97,11 @@
             <TextBlock
                 Foreground="Purple"
                 FontWeight="Bold"
-                Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource Self}, Converter={x:Static my:MainWin._jaml_MainWinConverter1}}">
+                Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource Self}, Converter={x:Static my:MainWin._jaml_MainWinConverter3}}">
                 <TextBlock.Text>
                     <MultiBinding
                         ConverterParameter="{x:Static Member=Visibility.Visible}"
-                        Converter="{x:Static my:MainWin._jaml_MainWinConverter}">
+                        Converter="{x:Static my:MainWin._jaml_MainWinConverter2}">
                         <Binding
                             Path="IsMouseOver"
                             RelativeSource="{RelativeSource Mode=Self}" />

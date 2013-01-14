@@ -22,7 +22,12 @@
                     Background: "Fuchsia"
                 }
             },
-            "{= ${this.Visibility} == Visibility.Hidden }": {
+            "{= (Visibility)${=this.Visibility} == Visibility.Hidden }": {
+                set: {
+                    Width: 20, Height: 20
+                }
+            },
+            "{= (bool)${=this.IsMouseOver} == (bool)${=this.IsMouseDirectlyOver} }": {
                 set: {
                     Width: 20, Height: 20
                 }

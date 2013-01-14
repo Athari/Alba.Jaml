@@ -41,10 +41,42 @@ namespace Alba.JamlTestApp
 {
     public partial class MainWin
     {
-        public static IMultiValueConverter _jaml_MainWinConverter = new _jaml_MainWinConverter_Class();
-        public static IValueConverter _jaml_MainWinConverter1 = new _jaml_MainWinConverter1_Class();
+        public static IValueConverter _jaml_MainWinConverter = new _jaml_MainWinConverter_Class();
+        public static IMultiValueConverter _jaml_MainWinConverter1 = new _jaml_MainWinConverter1_Class();
+        public static IMultiValueConverter _jaml_MainWinConverter2 = new _jaml_MainWinConverter2_Class();
+        public static IValueConverter _jaml_MainWinConverter3 = new _jaml_MainWinConverter3_Class();
  
-        private class _jaml_MainWinConverter_Class : IMultiValueConverter
+        private class _jaml_MainWinConverter_Class : IValueConverter
+        {
+            public object Convert (object value, Type targetType, object param, CultureInfo culture)
+            {
+                if (ReferenceEquals(value, DependencyProperty.UnsetValue))
+                    return DependencyProperty.UnsetValue;
+                return (Visibility)value == Visibility.Hidden;
+            }
+
+            public object ConvertBack (object value, Type targetType, object param, CultureInfo culture)
+            {
+                throw new NotSupportedException("Converter supports only one-way binding.");
+            }
+        }
+ 
+        private class _jaml_MainWinConverter1_Class : IMultiValueConverter
+        {
+            public object Convert (object[] values, Type targetType, object param, CultureInfo culture)
+            {
+                if (values.Any(v => ReferenceEquals(v, DependencyProperty.UnsetValue)))
+                    return DependencyProperty.UnsetValue;
+                return (bool)(values[0]) == (bool)(values[1]);
+            }
+
+            public object[] ConvertBack (object value, Type[] targetTypes, object param, CultureInfo culture)
+            {
+                throw new NotSupportedException("Converter supports only one-way binding.");
+            }
+        }
+ 
+        private class _jaml_MainWinConverter2_Class : IMultiValueConverter
         {
             public object Convert (object[] values, Type targetType, object param, CultureInfo culture)
             {
@@ -59,7 +91,7 @@ namespace Alba.JamlTestApp
             }
         }
  
-        private class _jaml_MainWinConverter1_Class : IValueConverter
+        private class _jaml_MainWinConverter3_Class : IValueConverter
         {
             public object Convert (object value, Type targetType, object param, CultureInfo culture)
             {

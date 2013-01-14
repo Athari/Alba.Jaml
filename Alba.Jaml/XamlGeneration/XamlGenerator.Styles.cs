@@ -14,34 +14,40 @@ namespace Alba.Jaml.XamlGeneration
         private const string pnProperty = "Property";
         private const string pnValue = "Value";
         private const string pnTargetName = "TargetName";
+        private const string pnBinding = "Binding";
         private static readonly Regex ReSetterWithTarget = new Regex(
             @"^  ref\.  (?<TargetName>" + ReIdent + @")  \.  (?<PropName>.+)  $",
             DefaultReOptions);
 
         private void ProcessStyleObject (ObjectContext ctx)
         {
-            JObject jobj = ctx.JObj;
-            Type targetType = GetTypeInfo(jobj).TargetType;
+            JObject jstyle = ctx.JObj;
+            Type targetType = GetTypeInfo(jstyle).TargetType;
 
-            if (jobj[pnSet] != null) {
-                if (jobj[pnSetters] == null)
-                    jobj[pnSetters] = new JArray();
-                var jsetters = ((JObject)jobj[pnSet]).Properties().Select(GetJObjectStyleSetter).ToArray();
-                ((JContainer)jobj[pnSetters]).Add(jsetters);
-                foreach (JObject jsetter in jobj[pnSetters]) {
-                    TokenTypeInfo valueTypeInfo = GetTypeInfo(jsetter.Property(pnValue));
-                    valueTypeInfo.PropertyItemType = GetPropertyItemType(targetType, (string)jsetter[pnProperty]);
-                }
-                jobj.Remove(pnSet);
+            if (jstyle[pnSet] != null) {
+                if (jstyle[pnSetters] == null)
+                    jstyle[pnSetters] = new JArray();
+                var jsetters = ((JObject)jstyle[pnSet]).Properties().Select(GetJObjectStyleSetter).ToArray();
+                ((JContainer)jstyle[pnSetters]).Add(jsetters);
+                AssignStyleSetterTypes(jstyle, targetType);
+                jstyle.Remove(pnSet);
             }
 
-            if (jobj[pnOn] != null) {
-                if (jobj[pnTriggers] == null)
-                    jobj[pnTriggers] = new JArray();
-                var jtriggers = ((JObject)jobj[pnOn]).Properties().Select(GetJObjectStyleTrigger).ToArray();
-                ((JContainer)jobj[pnTriggers]).Add(jtriggers);
+            if (jstyle[pnOn] != null) {
+                if (jstyle[pnTriggers] == null)
+                    jstyle[pnTriggers] = new JArray();
+                var jtriggers = ((JObject)jstyle[pnOn]).Properties().Select(p => GetJObjectStyleTrigger(p, targetType)).ToArray();
+                ((JContainer)jstyle[pnTriggers]).Add(jtriggers);
                 //jobj["Triggers"] = new JArray(((JObject)ctx.JContent).Properties().Select(GetJObjectStyleSetter));
-                jobj.Remove(pnOn);
+                jstyle.Remove(pnOn);
+            }
+        }
+
+        private void AssignStyleSetterTypes (JObject jstyle, Type targetType)
+        {
+            foreach (JObject jsetter in jstyle[pnSetters]) {
+                TokenTypeInfo valueTypeInfo = GetTypeInfo(jsetter.Property(pnValue));
+                valueTypeInfo.PropertyItemType = GetPropertyItemType(targetType, (string)jsetter[pnProperty]);
             }
         }
 
@@ -67,9 +73,24 @@ namespace Alba.Jaml.XamlGeneration
             return jsetter;
         }
 
-        private object GetJObjectStyleTrigger (JProperty prop)
+        private JObject GetJObjectStyleTrigger (JProperty prop, Type targetType)
         {
-            return null;
+            var jtrigger = new JObject(new JProperty(pnDollar, "DataTrigger"));
+            {
+                var jbinding = new JProperty(pnBinding, prop.Name);
+                ProcessBindingPropertyValue(jbinding);
+                jtrigger.Add(jbinding);
+                jtrigger.Add(pnValue, "True");
+                if (prop.Value[pnSet] != null) {
+                    jtrigger[pnSetters] = new JArray();
+                    {
+                        var jsetters = ((JObject)prop.Value[pnSet]).Properties().Select(GetJObjectStyleSetter).ToArray();
+                        ((JContainer)jtrigger[pnSetters]).Add(jsetters);
+                        AssignStyleSetterTypes(jtrigger, targetType);
+                    }
+                }
+            }
+            return jtrigger;
         }
     }
 }
