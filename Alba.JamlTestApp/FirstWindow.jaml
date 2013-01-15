@@ -1,0 +1,22 @@
+﻿_={
+    $: 'Window root',
+    Resources: [{
+        $: 'Style MyButtonStyle Button',
+        set: {
+            Background: 'Red', Foreground: 'Green'
+        },
+        on: {
+            '{=this.IsMouseOver}': {set: {
+                Background: 'Yellow', Foreground: 'Blue'
+            }}
+        }
+    }],
+    _: [{
+        $: 'Grid',
+        RowDefinitions: [ { Height: '*' } ],
+        ColumnDefinitions: [ { Width: '*' } ],
+        _: [{
+            $: 'Button btnPressMe', Content: 'Press me!', Style: '{@MyButtonStyle}'
+        }]
+    }]
+}

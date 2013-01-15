@@ -53,12 +53,25 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="FirstWindow.g.xaml.cs">
+      <DependentUpon>FirstWindow.tt</DependentUpon>
+    </Compile>
+    <Compile Include="FirstWindow.xaml.cs">
+      <DependentUpon>FirstWindow.tt</DependentUpon>
+    </Compile>
     <Compile Include="TreeViewWindow.g.xaml.cs">
       <DependentUpon>TreeViewWindow.tt</DependentUpon>
     </Compile>
     <Compile Include="TreeViewWindow.xaml.cs">
       <DependentUpon>TreeViewWindow.tt</DependentUpon>
     </Compile>
+    <Page Include="FirstWindow.g.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FirstWindow.tt</DependentUpon>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MainWin.g.xaml">
       <Generator>MSBuild:Compile</Generator>
       <AutoGen>True</AutoGen>
@@ -111,6 +124,17 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <None Include="FirstWindow.jaml">
+      <Generator>AttachT4</Generator>
+      <LastGenOutput>FirstWindow.tt</LastGenOutput>
+    </None>
+    <None Include="FirstWindow.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>FirstWindow.jaml</DependentUpon>
+      <LastGenOutput>FirstWindow.g.xaml</LastGenOutput>
+    </None>
     <None Include="Jaml.ttinclude" />
     <None Include="MainWin.jaml">
       <Generator>AttachT4</Generator>
