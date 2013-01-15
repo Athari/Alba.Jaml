@@ -90,9 +90,13 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 Links
 =====
 
-* [**Json.NET** by James Newton-King, JSON library for .NET](http://json.net/)
+The library uses the following third-party code:
+* [**Json.NET** by James Newton-King](http://json.net/), JSON library for .NET.
+* [**T4MultiFile** by Brandon D'Imperio](http://nuget.org/packages/T4MultiFile), T4 helper file to help generate multiple file outputs.
+* `MS.Internal` namespace of `System.Xaml` from .NET Framework, partially extracted with [.NET Reflector][Reflector].
 
 [Json.NET]: http://json.net/ "Json.NET by James Newton-King, JSON library for .NET"
 [QML]: http://doc.qt.digia.com/qt/qtquick.html "Qt Modeling Language, part of Qt Quick, part of Qt Framework"
 [NRefactory]: https://github.com/icsharpcode/NRefactory/ "C# analysis library used in the SharpDevelop and MonoDevelop IDEs"
 [Roslyn]: http://msdn.microsoft.com/en-us/roslyn "APIs for exposing the Microsoft C# and Visual Basic .NET compilers as services"
+[Reflector]: http://www.reflector.net/ "The tool for decompiling .NET assemblies"
