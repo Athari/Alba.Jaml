@@ -1,6 +1,46 @@
 <Window
     x:Name="root" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:my="clr-namespace:Alba.JamlTestApp"
     x:Class="Alba.JamlTestApp.TreeViewWindow">
+    <Grid>
+        <TreeView>
+            <TreeView.Items>
+                <TreeViewItem
+                    Header="Root">
+                    <TreeViewItem.Items>
+                        <TreeViewItem
+                            Header="Item 1">
+                            <TreeViewItem.Items>
+                                <TreeViewItem
+                                    Header="Item 1 1" />
+                                <TreeViewItem
+                                    Header="Item 1 2" />
+                                <TreeViewItem
+                                    Header="Item 1 3" />
+                            </TreeViewItem.Items>
+                        </TreeViewItem>
+                        <TreeViewItem
+                            Header="Item 2">
+                            <TreeViewItem.Items>
+                                <TreeViewItem
+                                    Header="Item 2 1">
+                                    <TreeViewItem.Items>
+                                        <TreeViewItem
+                                            Header="Item 2 1 1" />
+                                    </TreeViewItem.Items>
+                                </TreeViewItem>
+                            </TreeViewItem.Items>
+                        </TreeViewItem>
+                        <TreeViewItem
+                            Header="Item 3" />
+                        <TreeViewItem
+                            Header="Item 4" />
+                        <TreeViewItem
+                            Header="Item 5" />
+                    </TreeViewItem.Items>
+                </TreeViewItem>
+            </TreeView.Items>
+        </TreeView>
+    </Grid>
     <Window.Resources>
         <Style
             x:Key="ExpandCollapseToggleStyle"
@@ -19,7 +59,18 @@
                     Property="Template">
                     <Setter.Value>
                         <ControlTemplate
-                            TargetType="{x:Type ToggleButton}">
+                            TargetType="ToggleButton">
+                            <Border
+                                Width="16"
+                                Height="16"
+                                Background="Transparent"
+                                Padding="3 4 3 3">
+                                <Path
+                                    x:Name="ExpandPath"
+                                    Fill="Transparent"
+                                    Stroke="#FF989898"
+                                    Data="M 4,0 L 8,4 4,8 Z" />
+                            </Border>
                             <ControlTemplate.Triggers>
                                 <DataTrigger
                                     Binding="{Binding IsChecked, RelativeSource={RelativeSource Self}}"
@@ -35,28 +86,195 @@
                                                     CenterY="4" />
                                             </Setter.Value>
                                         </Setter>
+                                        <Setter
+                                            TargetName="ExpandPath"
+                                            Property="Fill"
+                                            Value="#FF595959" />
+                                        <Setter
+                                            TargetName="ExpandPath"
+                                            Property="Stroke"
+                                            Value="#FF262626" />
+                                    </DataTrigger.Setters>
+                                </DataTrigger>
+                                <DataTrigger
+                                    Binding="{Binding IsMouseOver, RelativeSource={RelativeSource Self}}"
+                                    Value="True">
+                                    <DataTrigger.Setters>
+                                        <Setter
+                                            TargetName="ExpandPath"
+                                            Property="Fill"
+                                            Value="#FF1BBBFA" />
+                                        <Setter
+                                            TargetName="ExpandPath"
+                                            Property="Stroke"
+                                            Value="Transparent" />
+                                    </DataTrigger.Setters>
+                                </DataTrigger>
+                                <DataTrigger
+                                    Value="True">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding
+                                            Converter="{x:Static my:TreeViewWindow._jaml_TreeViewWindowConverter}">
+                                            <Binding
+                                                Path="IsMouseOver"
+                                                RelativeSource="{RelativeSource Mode=Self}" />
+                                            <Binding
+                                                Path="IsChecked"
+                                                RelativeSource="{RelativeSource Mode=Self}" />
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <DataTrigger.Setters>
+                                        <Setter
+                                            TargetName="ExpandPath"
+                                            Property="Fill"
+                                            Value="#FF262626" />
+                                        <Setter
+                                            TargetName="ExpandPath"
+                                            Property="Stroke"
+                                            Value="#FF595959" />
                                     </DataTrigger.Setters>
                                 </DataTrigger>
                             </ControlTemplate.Triggers>
-                            <Border
-                                Width="16"
-                                Height="16"
-                                Background="Transparent"
-                                Padding="3 4 3 3">
-                                <Path
-                                    x:Name="ExpandPath"
-                                    Fill="Transparent"
-                                    Stroke="#FF989898"
-                                    Data="M 4,0 L 8,4 4,8 Z" />
-                            </Border>
                         </ControlTemplate>
                     </Setter.Value>
                 </Setter>
             </Style.Setters>
         </Style>
+        <Style
+            TargetType="{x:Type TreeViewItem}">
+            <Style.Setters>
+                <Setter
+                    Property="HorizontalContentAlignment"
+                    Value="Stretch" />
+                <Setter
+                    Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate
+                            TargetType="TreeViewItem">
+                            <Grid>
+                                <ToggleButton
+                                    x:Name="chkExpand"
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    ClickMode="Press"
+                                    IsChecked="{Binding IsExpanded, RelativeSource={RelativeSource TemplatedParent}}"
+                                    Style="{StaticResource ExpandCollapseToggleStyle}" />
+                                <Border
+                                    x:Name="brdBG"
+                                    Grid.Row="0"
+                                    Grid.Column="1"
+                                    Grid.RowSpan="1"
+                                    Grid.ColumnSpan="2"
+                                    Padding="{TemplateBinding Padding}"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}">
+                                    <ContentPresenter
+                                        x:Name="PART_Header"
+                                        ContentSource="Header"
+                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
+                                </Border>
+                                <ItemsPresenter
+                                    x:Name="preItems"
+                                    Grid.Row="1"
+                                    Grid.Column="1"
+                                    Grid.RowSpan="1"
+                                    Grid.ColumnSpan="2" />
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition
+                                        Width="Auto"
+                                        MinWidth="20" />
+                                    <ColumnDefinition
+                                        Width="Auto" />
+                                    <ColumnDefinition
+                                        Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition
+                                        Height="Auto" />
+                                    <RowDefinition
+                                        Height="Auto" />
+                                </Grid.RowDefinitions>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <DataTrigger
+                                    Binding="{Binding IsExpanded, RelativeSource={RelativeSource Self}, Converter={x:Static my:TreeViewWindow._jaml_TreeViewWindowConverter1}}"
+                                    Value="True">
+                                    <DataTrigger.Setters>
+                                        <Setter
+                                            TargetName="preItems"
+                                            Property="Visibility"
+                                            Value="Collapsed" />
+                                    </DataTrigger.Setters>
+                                </DataTrigger>
+                                <DataTrigger
+                                    Binding="{Binding HasItems, RelativeSource={RelativeSource Self}, Converter={x:Static my:TreeViewWindow._jaml_TreeViewWindowConverter2}}"
+                                    Value="True">
+                                    <DataTrigger.Setters>
+                                        <Setter
+                                            TargetName="chkExpand"
+                                            Property="Visibility"
+                                            Value="Hidden" />
+                                    </DataTrigger.Setters>
+                                </DataTrigger>
+                                <DataTrigger
+                                    Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}"
+                                    Value="True">
+                                    <DataTrigger.Setters>
+                                        <Setter
+                                            TargetName="brdBG"
+                                            Property="Background"
+                                            Value="{DynamicResource {x:Static SystemColors.HighlightBrushKey}}" />
+                                        <Setter
+                                            Property="Foreground"
+                                            Value="{DynamicResource {x:Static SystemColors.HighlightTextBrushKey}}" />
+                                    </DataTrigger.Setters>
+                                </DataTrigger>
+                                <DataTrigger
+                                    Value="True">
+                                    <DataTrigger.Binding>
+                                        <MultiBinding
+                                            Converter="{x:Static my:TreeViewWindow._jaml_TreeViewWindowConverter3}">
+                                            <Binding
+                                                Path="IsSelected"
+                                                RelativeSource="{RelativeSource Mode=Self}" />
+                                            <Binding
+                                                Path="IsSelectionActive"
+                                                RelativeSource="{RelativeSource Mode=Self}" />
+                                        </MultiBinding>
+                                    </DataTrigger.Binding>
+                                    <DataTrigger.Setters>
+                                        <Setter
+                                            TargetName="brdBG"
+                                            Property="Background"
+                                            Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightBrushKey}}" />
+                                        <Setter
+                                            Property="Foreground"
+                                            Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}}" />
+                                    </DataTrigger.Setters>
+                                </DataTrigger>
+                                <DataTrigger
+                                    Binding="{Binding IsEnabled, RelativeSource={RelativeSource Self}, Converter={x:Static my:TreeViewWindow._jaml_TreeViewWindowConverter4}}"
+                                    Value="True">
+                                    <DataTrigger.Setters>
+                                        <Setter
+                                            Property="Foreground"
+                                            Value="{DynamicResource {x:Static SystemColors.GrayTextBrushKey}}" />
+                                    </DataTrigger.Setters>
+                                </DataTrigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style.Setters>
+        </Style>
+        <Style
+            TargetType="{x:Type TreeView}">
+            <Style.Setters>
+                <Setter
+                    Property="ScrollViewer.HorizontalScrollBarVisibility"
+                    Value="Disabled" />
+            </Style.Setters>
+        </Style>
     </Window.Resources>
-    <Grid>
-        <TreeView
-            Items="{Binding ItemModels, ElementName=root}" />
-    </Grid>
 </Window>

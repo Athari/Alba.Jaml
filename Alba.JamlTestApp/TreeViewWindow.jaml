@@ -5,7 +5,7 @@
         set: {
             Width: 16, Height: 16, Focusable: false,
             Template: {
-                TargetType: '{~ToggleButton}',
+                TargetType: 'ToggleButton',
                 _: [{
                     $: 'Border',
                     Width: 16, Height: 16, Background: 'Transparent', Padding: '3 4 3 3',
@@ -17,17 +17,96 @@
                     '{=this.IsChecked}': {set: {
                         'ref.ExpandPath.RenderTransform': {
                             $: 'RotateTransform', Angle: 45, CenterX: 4, CenterY: 4
-                        }
+                        },
+                        'ref.ExpandPath.Fill': '#FF595959', 'ref.ExpandPath.Stroke': '#FF262626'
+                    }},
+                    '{=this.IsMouseOver}': {set: {
+                        'ref.ExpandPath.Fill': '#FF1BBBFA', 'ref.ExpandPath.Stroke': 'Transparent'
+                    }},
+                    '{= (bool)${=this.IsMouseOver} && (bool)${=this.IsChecked} }': {set: {
+                        'ref.ExpandPath.Fill': '#FF262626', 'ref.ExpandPath.Stroke': '#FF595959'
                     }}
                 }
             }
+        }
+    }, {
+        $: 'Style TreeViewItem',
+        set: {
+            HorizontalContentAlignment: 'Stretch',
+            Template: {
+                TargetType: 'TreeViewItem',
+                _: [{
+                    $: 'Grid',
+                    ColumnDefinitions: [ { Width: 'Auto', MinWidth: 20 }, { Width: 'Auto' }, { Width: '*' }],
+                    RowDefinitions: [ { Height: 'Auto' }, { Height: 'Auto' } ],
+                    _: [{
+                        $: 'ToggleButton chkExpand', Grid$: '0 0',
+                        ClickMode: 'Press', IsChecked: '{=tpl.IsExpanded}', Style: '{@ExpandCollapseToggleStyle}'
+                    }, {
+                        $: 'Border brdBG', Grid$: '0 1 1 2', Padding: '{tpl.Padding}', Background: '{tpl.Background}',
+                        BorderBrush: '{tpl.BorderBrush}', BorderThickness: '{tpl.BorderThickness}',
+                        _: {
+                            $: 'ContentPresenter PART_Header', ContentSource: 'Header',
+                            HorizontalAlignment: '{tpl.HorizontalContentAlignment}'
+                        }
+                    }, {
+                        $: 'ItemsPresenter preItems', Grid$: '1 1 1 2'
+                    }]
+                }],
+                on: {
+                    '{= !(bool)${=this.IsExpanded} }': {set: {
+                        'ref.preItems.Visibility': 'Collapsed'
+                    }},
+                    '{= !(bool)${=this.HasItems} }': {set: {
+                        'ref.chkExpand.Visibility': 'Hidden'
+                    }},
+                    '{=this.IsSelected}': {set: {
+                        'ref.brdBG.Background': '{@={static.SystemColors.HighlightBrushKey}}',
+                        'Foreground': '{@={static.SystemColors.HighlightTextBrushKey}}'
+                    }},
+                    '{= (bool)${=this.IsSelected} && !(bool)${=this.IsSelectionActive} }': {set: {
+                        'ref.brdBG.Background': '{@={static.SystemColors.InactiveSelectionHighlightBrushKey}}',
+                        'Foreground': '{@={static.SystemColors.InactiveSelectionHighlightTextBrushKey}}'
+                    }},
+                    '{= !(bool)${=this.IsEnabled} }': {set: {
+                        'Foreground': '{@={static.SystemColors.GrayTextBrushKey}}'
+                    }}
+                }
+            }
+        }
+    }, {
+        $: 'Style TreeView',
+        set: {
+            'ScrollViewer.HorizontalScrollBarVisibility': 'Disabled'
         }
     }],
     _: [{
         $: 'Grid',
         _: [{
             $: 'TreeView',
-            Items: '{=ref.root.ItemModels}'
+            Items: [{
+                $: 'TreeViewItem', Header: 'Root', Items: [{
+                    $: 'TreeViewItem', Header: 'Item 1', Items: [{
+                        $: 'TreeViewItem', Header: 'Item 1 1'
+                    }, {
+                        $: 'TreeViewItem', Header: 'Item 1 2'
+                    }, {
+                        $: 'TreeViewItem', Header: 'Item 1 3'
+                    }]
+                }, {
+                    $: 'TreeViewItem', Header: 'Item 2', Items: [{
+                        $: 'TreeViewItem', Header: 'Item 2 1', Items: [{
+                            $: 'TreeViewItem', Header: 'Item 2 1 1'
+                        }]
+                    }]
+                }, {
+                    $: 'TreeViewItem', Header: 'Item 3'
+                }, {
+                    $: 'TreeViewItem', Header: 'Item 4'
+                }, {
+                    $: 'TreeViewItem', Header: 'Item 5'
+                }]
+            }]
         }]
     }]
 }

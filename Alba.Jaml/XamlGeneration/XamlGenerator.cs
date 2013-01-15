@@ -96,10 +96,10 @@ namespace Alba.Jaml.XamlGeneration
                 xAttrVisibility,
                 xAttrsIds,
                 xAttrsShortProps,
-                allProps.Where(IsComplexProperty).Select(GetXElementComplexProperty).ToArray(),
-                allProps.Where(IsScalarProperty).Select(GetXAttrScalarProperty).ToArray(),
+                ctx.JContent == null ? null : GetObjectOrEnum(ctx.JContent).Select(GetXObject).ToArray(),
                 allProps.Where(IsScalarContentProperty).Select(GetXTextScalarPropertyContent).ToArray(),
-                ctx.JContent == null ? null : GetObjectOrEnum(ctx.JContent).Select(GetXObject).ToArray()
+                allProps.Where(IsComplexProperty).Select(GetXElementComplexProperty).ToArray(),
+                allProps.Where(IsScalarProperty).Select(GetXAttrScalarProperty).ToArray()
                 );
         }
 
@@ -210,6 +210,8 @@ namespace Alba.Jaml.XamlGeneration
         private Type GetPropertyItemType (Type objType, string propName)
         {
             Type propType = GetPropertyType(objType, propName);
+            if (propType == null)
+                return null;
             Type enumType = GetGenericInterface(propType, typeof(IEnumerable<>));
             Type itemType = null;
             if (enumType != null)
@@ -250,8 +252,9 @@ namespace Alba.Jaml.XamlGeneration
                 if (dprop != null)
                     return dprop.PropertyType;
             }
-            throw new InvalidOperationException(String.Format("Property {0} not found in class {1}.",
-                propName, objType.FullName));
+            /*throw new InvalidOperationException(String.Format("Property {0} not found in class {1}.",
+                propName, objType.FullName));*/
+            return null;
         }
 
         private Type GetTypeByName (string typeName)

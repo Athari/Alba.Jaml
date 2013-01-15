@@ -59,7 +59,7 @@ namespace Alba.Jaml.XamlGeneration
         // Binding RelativeSource=AncestorType    {=~TypeName.Path}
         // Binding Source=resource                {=@{static.TypeName.Property}.Path}
         // MultiBinding+Converter                 {=${...} + 42 + ${...}}
-        // TemplateBinding                        {=@{@resource}.Path}
+        // TemplateBinding                        {tpl.Path}
         // StaticResource Key                     {@Key}
         // DynamicResource Key                    {@=Key}
         // x:Null                                 {null}
@@ -68,6 +68,7 @@ namespace Alba.Jaml.XamlGeneration
         private static readonly string[][] MarkupAliases = new[] {
             new[] { "{@=", "{DynamicResource " },
             new[] { "{@", "{StaticResource " },
+            new[] { "{tpl.", "{TemplateBinding " },
             new[] { "{=}", "{Binding}" },
             new[] { "{~", "{x:Type " },
             new[] { "{static.", "{x:Static " },

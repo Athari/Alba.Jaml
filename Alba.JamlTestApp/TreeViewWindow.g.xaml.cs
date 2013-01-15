@@ -41,6 +41,86 @@ namespace Alba.JamlTestApp
 {
     public partial class TreeViewWindow
     {
+        public static IMultiValueConverter _jaml_TreeViewWindowConverter = new _jaml_TreeViewWindowConverter_Class();
+        public static IValueConverter _jaml_TreeViewWindowConverter1 = new _jaml_TreeViewWindowConverter1_Class();
+        public static IValueConverter _jaml_TreeViewWindowConverter2 = new _jaml_TreeViewWindowConverter2_Class();
+        public static IMultiValueConverter _jaml_TreeViewWindowConverter3 = new _jaml_TreeViewWindowConverter3_Class();
+        public static IValueConverter _jaml_TreeViewWindowConverter4 = new _jaml_TreeViewWindowConverter4_Class();
+ 
+        private class _jaml_TreeViewWindowConverter_Class : IMultiValueConverter
+        {
+            public object Convert (object[] values, Type targetType, object param, CultureInfo culture)
+            {
+                if (values.Any(v => ReferenceEquals(v, DependencyProperty.UnsetValue)))
+                    return DependencyProperty.UnsetValue;
+                return (bool)(values[0]) && (bool)(values[1]);
+            }
+
+            public object[] ConvertBack (object value, Type[] targetTypes, object param, CultureInfo culture)
+            {
+                throw new NotSupportedException("Converter supports only one-way binding.");
+            }
+        }
+ 
+        private class _jaml_TreeViewWindowConverter1_Class : IValueConverter
+        {
+            public object Convert (object value, Type targetType, object param, CultureInfo culture)
+            {
+                if (ReferenceEquals(value, DependencyProperty.UnsetValue))
+                    return DependencyProperty.UnsetValue;
+                return !(bool)value;
+            }
+
+            public object ConvertBack (object value, Type targetType, object param, CultureInfo culture)
+            {
+                throw new NotSupportedException("Converter supports only one-way binding.");
+            }
+        }
+ 
+        private class _jaml_TreeViewWindowConverter2_Class : IValueConverter
+        {
+            public object Convert (object value, Type targetType, object param, CultureInfo culture)
+            {
+                if (ReferenceEquals(value, DependencyProperty.UnsetValue))
+                    return DependencyProperty.UnsetValue;
+                return !(bool)value;
+            }
+
+            public object ConvertBack (object value, Type targetType, object param, CultureInfo culture)
+            {
+                throw new NotSupportedException("Converter supports only one-way binding.");
+            }
+        }
+ 
+        private class _jaml_TreeViewWindowConverter3_Class : IMultiValueConverter
+        {
+            public object Convert (object[] values, Type targetType, object param, CultureInfo culture)
+            {
+                if (values.Any(v => ReferenceEquals(v, DependencyProperty.UnsetValue)))
+                    return DependencyProperty.UnsetValue;
+                return (bool)(values[0]) && !(bool)(values[1]);
+            }
+
+            public object[] ConvertBack (object value, Type[] targetTypes, object param, CultureInfo culture)
+            {
+                throw new NotSupportedException("Converter supports only one-way binding.");
+            }
+        }
+ 
+        private class _jaml_TreeViewWindowConverter4_Class : IValueConverter
+        {
+            public object Convert (object value, Type targetType, object param, CultureInfo culture)
+            {
+                if (ReferenceEquals(value, DependencyProperty.UnsetValue))
+                    return DependencyProperty.UnsetValue;
+                return !(bool)value;
+            }
+
+            public object ConvertBack (object value, Type targetType, object param, CultureInfo culture)
+            {
+                throw new NotSupportedException("Converter supports only one-way binding.");
+            }
+        }
  
     }
 }

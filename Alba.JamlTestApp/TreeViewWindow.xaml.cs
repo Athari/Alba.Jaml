@@ -8,8 +8,6 @@ namespace Alba.JamlTestApp
 
         public TreeViewWindow ()
         {
-            InitializeComponent();
-
             ItemModels = new ObservableCollection<ItemModel> {
                 new ItemModel("Root Item") {
                     Items = {
@@ -35,6 +33,7 @@ namespace Alba.JamlTestApp
                     }
                 },
             };
+            InitializeComponent();
         }
 
         public class ItemModel
