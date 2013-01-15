@@ -78,6 +78,30 @@
                             Value="20" />
                     </DataTrigger.Setters>
                 </DataTrigger>
+                <DataTrigger
+                    Value="True">
+                    <DataTrigger.Binding>
+                        <MultiBinding
+                            Converter="{x:Static my:MainWin._jaml_MainWinConverter2}">
+                            <Binding
+                                Path="IsMouseOver"
+                                ElementName="grdGrid" />
+                            <Binding
+                                Path="IsMouseDirectlyOver"
+                                ElementName="grdGrid" />
+                        </MultiBinding>
+                    </DataTrigger.Binding>
+                    <DataTrigger.Setters>
+                        <Setter
+                            TargetName="grdGrid"
+                            Property="Width"
+                            Value="20" />
+                        <Setter
+                            TargetName="grdGrid"
+                            Property="Height"
+                            Value="20" />
+                    </DataTrigger.Setters>
+                </DataTrigger>
             </Style.Triggers>
         </Style>
         <Style
@@ -97,11 +121,11 @@
             <TextBlock
                 Foreground="Purple"
                 FontWeight="Bold"
-                Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource Self}, Converter={x:Static my:MainWin._jaml_MainWinConverter3}}">
+                Visibility="{Binding IsMouseOver, RelativeSource={RelativeSource Self}, Converter={x:Static my:MainWin._jaml_MainWinConverter4}}">
                 <TextBlock.Text>
                     <MultiBinding
                         ConverterParameter="{x:Static Member=Visibility.Visible}"
-                        Converter="{x:Static my:MainWin._jaml_MainWinConverter2}">
+                        Converter="{x:Static my:MainWin._jaml_MainWinConverter3}">
                         <Binding
                             Path="IsMouseOver"
                             RelativeSource="{RelativeSource Mode=Self}" />

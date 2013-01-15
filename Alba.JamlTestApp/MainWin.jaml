@@ -32,6 +32,11 @@
                     Width: 20, Height: 20
                 }
             },
+            "{= (bool)${=ref.grdGrid.IsMouseOver} == (bool)${=ref.grdGrid.IsMouseDirectlyOver} }": {
+                set: {
+                    ref$grdGrid$Width: 20, ref$grdGrid$Height: 20
+                }
+            },
         }
     },{
         $: "Style stybtnGreen Button",
