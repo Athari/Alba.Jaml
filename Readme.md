@@ -18,6 +18,34 @@ Features
 * Simple setters and triggers syntax: you'll never painfully convert properties to setters again (they'll have the same syntax), you'll never write ten levels deep multi-triggers with multi-bindings again.
 * (TODO) C#-style `using` directives.
 
+Example
+=======
+
+```javascript
+_={
+    $: 'Window root',
+    Resources: [{
+        $: 'Style MyButtonStyle Button',
+        set: {
+            Background: 'Red', Foreground: 'Green'
+        },
+        on: {
+            '{=this.IsMouseOver}': {set: {
+                Background: 'Yellow', Foreground: 'Blue'
+            }}
+        }
+    }],
+    _: [{
+        $: 'Grid',
+        RowDefinitions: [ { Height: '*' } ],
+        ColumnDefinitions: [ { Width: '*' } ],
+        _: [{
+            $: 'Button btnPressMe', Content: 'Press me!', Style: '{@MyButtonStyle}'
+        }]
+    }]
+}
+```
+
 Current limitations
 ===================
 
@@ -45,7 +73,9 @@ See wiki:
 
 [JAML Syntax](https://github.com/Athari/Alba.Jaml/wiki/JAML-Syntax)
 
-[Example 1: TreeViewItem template](https://github.com/Athari/Alba.Jaml/wiki/Example-1:-TreeViewItem-template)
+[Example 1: Simple window](https://github.com/Athari/Alba.Jaml/wiki/Example-1:-Simple-window)
+
+[Example 2: TreeViewItem template](https://github.com/Athari/Alba.Jaml/wiki/Example-2:-TreeViewItem-template)
 
 To-do list
 ==========
