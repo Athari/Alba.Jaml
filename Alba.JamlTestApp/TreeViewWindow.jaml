@@ -1,0 +1,33 @@
+﻿_={
+    $: 'Window root',
+    Resources: [{
+        $: 'Style ExpandCollapseToggleStyle ToggleButton',
+        set: {
+            Width: 16, Height: 16, Focusable: false,
+            Template: {
+                TargetType: '{~ToggleButton}',
+                _: [{
+                    $: 'Border',
+                    Width: 16, Height: 16, Background: 'Transparent', Padding: '3 4 3 3',
+                    _: [{
+                        $: 'Path ExpandPath', Fill: 'Transparent', Stroke: '#FF989898', Data: 'M 4,0 L 8,4 4,8 Z'
+                    }]
+                }],
+                on: {
+                    '{=this.IsChecked}': {set: {
+                        'ref.ExpandPath.RenderTransform': {
+                            $: 'RotateTransform', Angle: 45, CenterX: 4, CenterY: 4
+                        }
+                    }}
+                }
+            }
+        }
+    }],
+    _: [{
+        $: 'Grid',
+        _: [{
+            $: 'TreeView',
+            Items: '{=ref.root.ItemModels}'
+        }]
+    }]
+}

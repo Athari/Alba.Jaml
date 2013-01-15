@@ -11,7 +11,7 @@
                     { $: "StackPanel" }
                 ]
             },
-            ref$ctlName$Background: "Red",
+            /*ref$ctlName$Background: "Red",*/
             Foreground: "Blue",
             Content: null,
             TextOptions$TextFormattingMode: "Display",
@@ -32,11 +32,11 @@
                     Width: 20, Height: 20
                 }
             },
-            "{= (bool)${=ref.grdGrid.IsMouseOver} == (bool)${=ref.grdGrid.IsMouseDirectlyOver} }": {
+            /*"{= (bool)${=ref.grdGrid.IsMouseOver} == (bool)${=ref.grdGrid.IsMouseDirectlyOver} }": {
                 set: {
                     ref$grdGrid$Width: 20, ref$grdGrid$Height: 20
                 }
-            },
+            },*/
         }
     },{
         $: "Style stybtnGreen Button",

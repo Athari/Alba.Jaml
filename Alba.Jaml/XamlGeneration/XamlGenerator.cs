@@ -83,8 +83,10 @@ namespace Alba.Jaml.XamlGeneration
             var xAttrVisibility = GetXAttrObjectVisibility(jobj, ctx.Visibility);
             var xAttrsIds = GetXAttrsObjectIds(ctx.ObjId, ctx.TypeInfo).ToArray();
 
-            if (ctx.TypeInfo.Type == typeof(Style))
+            if (typeof(Style).IsAssignableFrom(ctx.TypeInfo.Type))
                 ProcessStyleObject(ctx);
+            if (typeof(FrameworkTemplate).IsAssignableFrom(ctx.TypeInfo.Type))
+                ProcessTemplateObject(ctx);
 
             AssignPropertyTypeInfos(jobj, ctx);
             var allProps = new List<JProperty>();

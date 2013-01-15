@@ -14,6 +14,7 @@ namespace Alba.Jaml.XamlGeneration
         private const string pnProperty = "Property";
         private const string pnValue = "Value";
         private const string pnTargetName = "TargetName";
+        private const string pnTargetType = "TargetType";
         private const string pnBinding = "Binding";
         private static readonly Regex ReSetterWithTarget = new Regex(
             @"^  ref\.  (?<TargetName>" + ReIdent + @")  \.  (?<PropName>.+)  $",
@@ -27,23 +28,42 @@ namespace Alba.Jaml.XamlGeneration
             if (jstyle[pnSet] != null) {
                 if (jstyle[pnSetters] == null)
                     jstyle[pnSetters] = new JArray();
-                var jsetters = ((JObject)jstyle[pnSet]).Properties().Select(GetJObjectStyleSetter).ToArray();
-                ((JContainer)jstyle[pnSetters]).Add(jsetters);
-                AssignStyleSetterTypes(jstyle, targetType);
+                var jsetters = ((JObject)jstyle[pnSet]).Properties().Select(GetJObjectSetter).ToArray();
+                ((JArray)jstyle[pnSetters]).Add(jsetters);
+                AssignSetterTypes(jstyle, targetType);
                 jstyle.Remove(pnSet);
             }
 
             if (jstyle[pnOn] != null) {
                 if (jstyle[pnTriggers] == null)
                     jstyle[pnTriggers] = new JArray();
-                var jtriggers = ((JObject)jstyle[pnOn]).Properties().Select(p => GetJObjectStyleTrigger(p, targetType)).ToArray();
-                ((JContainer)jstyle[pnTriggers]).Add(jtriggers);
-                //jobj["Triggers"] = new JArray(((JObject)ctx.JContent).Properties().Select(GetJObjectStyleSetter));
+                var jtriggers = ((JObject)jstyle[pnOn]).Properties().Select(p => GetJObjectTrigger(p, targetType)).ToArray();
+                ((JArray)jstyle[pnTriggers]).Add(jtriggers);
                 jstyle.Remove(pnOn);
             }
         }
 
-        private void AssignStyleSetterTypes (JObject jstyle, Type targetType)
+        private void ProcessTemplateObject (ObjectContext ctx)
+        {
+            JObject jtemplate = ctx.JObj;
+            Type targetType = GetTypeInfo(jtemplate).TargetType;
+
+            if (targetType == null) {
+                var strTargetType = FormatScalarPropertyValue(jtemplate[pnTargetType]);
+                targetType = GetTypeInfo(jtemplate).TargetType = GetTypeByName(strTargetType.StartsWith("{x:Type ")
+                    ? strTargetType.Substring(8, strTargetType.Length - 9).Trim() : strTargetType);
+            }
+
+            if (jtemplate[pnOn] != null) {
+                if (jtemplate[pnTriggers] == null)
+                    jtemplate[pnTriggers] = new JArray();
+                var jtriggers = ((JObject)jtemplate[pnOn]).Properties().Select(p => GetJObjectTrigger(p, targetType)).ToArray();
+                ((JArray)jtemplate[pnTriggers]).Add(jtriggers);
+                jtemplate.Remove(pnOn);
+            }
+        }
+
+        private void AssignSetterTypes (JObject jstyle, Type targetType)
         {
             foreach (JObject jsetter in jstyle[pnSetters]) {
                 TokenTypeInfo valueTypeInfo = GetTypeInfo(jsetter.Property(pnValue));
@@ -52,7 +72,7 @@ namespace Alba.Jaml.XamlGeneration
         }
 
         /// <summary>Convert JProperty to JObject style setter: &lt;Setter TargetName="targetName" Property="propName" Value="prop.Value"/&gt;.</summary>
-        private JObject GetJObjectStyleSetter (JProperty prop)
+        private JObject GetJObjectSetter (JProperty prop)
         {
             // check for presence of ref.elementName
             string targetName = null, propName = FormatScalarPropertyName(prop);
@@ -73,7 +93,7 @@ namespace Alba.Jaml.XamlGeneration
             return jsetter;
         }
 
-        private JObject GetJObjectStyleTrigger (JProperty prop, Type targetType)
+        private JObject GetJObjectTrigger (JProperty prop, Type targetType)
         {
             var jtrigger = new JObject(new JProperty(pnDollar, "DataTrigger"));
             {
@@ -84,9 +104,9 @@ namespace Alba.Jaml.XamlGeneration
                 if (prop.Value[pnSet] != null) {
                     jtrigger[pnSetters] = new JArray();
                     {
-                        var jsetters = ((JObject)prop.Value[pnSet]).Properties().Select(GetJObjectStyleSetter).ToArray();
-                        ((JContainer)jtrigger[pnSetters]).Add(jsetters);
-                        AssignStyleSetterTypes(jtrigger, targetType);
+                        var jsetters = ((JObject)prop.Value[pnSet]).Properties().Select(GetJObjectSetter).ToArray();
+                        ((JArray)jtrigger[pnSetters]).Add(jsetters);
+                        AssignSetterTypes(jtrigger, targetType);
                     }
                 }
             }

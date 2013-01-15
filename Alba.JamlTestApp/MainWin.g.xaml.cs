@@ -44,8 +44,7 @@ namespace Alba.JamlTestApp
         public static IValueConverter _jaml_MainWinConverter = new _jaml_MainWinConverter_Class();
         public static IMultiValueConverter _jaml_MainWinConverter1 = new _jaml_MainWinConverter1_Class();
         public static IMultiValueConverter _jaml_MainWinConverter2 = new _jaml_MainWinConverter2_Class();
-        public static IMultiValueConverter _jaml_MainWinConverter3 = new _jaml_MainWinConverter3_Class();
-        public static IValueConverter _jaml_MainWinConverter4 = new _jaml_MainWinConverter4_Class();
+        public static IValueConverter _jaml_MainWinConverter3 = new _jaml_MainWinConverter3_Class();
  
         private class _jaml_MainWinConverter_Class : IValueConverter
         {
@@ -83,21 +82,6 @@ namespace Alba.JamlTestApp
             {
                 if (values.Any(v => ReferenceEquals(v, DependencyProperty.UnsetValue)))
                     return DependencyProperty.UnsetValue;
-                return (bool)(values[0]) == (bool)(values[1]);
-            }
-
-            public object[] ConvertBack (object value, Type[] targetTypes, object param, CultureInfo culture)
-            {
-                throw new NotSupportedException("Converter supports only one-way binding.");
-            }
-        }
- 
-        private class _jaml_MainWinConverter3_Class : IMultiValueConverter
-        {
-            public object Convert (object[] values, Type targetType, object param, CultureInfo culture)
-            {
-                if (values.Any(v => ReferenceEquals(v, DependencyProperty.UnsetValue)))
-                    return DependencyProperty.UnsetValue;
                 return string.Format("param = {0}\nIsMouseOver = {1}\nIsMouseDirectlyOver = {2}", param, (values[0]), (values[1]));
             }
 
@@ -107,7 +91,7 @@ namespace Alba.JamlTestApp
             }
         }
  
-        private class _jaml_MainWinConverter4_Class : IValueConverter
+        private class _jaml_MainWinConverter3_Class : IValueConverter
         {
             public object Convert (object value, Type targetType, object param, CultureInfo culture)
             {
