@@ -46,6 +46,51 @@ _={
 }
 ```
 
+Example from future
+===================
+
+JSON is a temporary choice. In future, the code above may look like this:
+```javascript
+Window root {
+    Resources: [
+        Style MyButtonStyle Button {
+            set: {
+                Background: Red, Foreground: Green
+            },
+            on: {
+                {=this.IsMouseOver}: {set: {
+                    Background: Yellow, Foreground: Blue
+                }}
+            }
+        }
+    ],
+    Grid {
+        RowDefinitions: [ { Height: * } ],
+        ColumnDefinitions: [ { Width: * } ],
+        Button btnPressMe {
+            Content: 'Press me!', Style: {@MyButtonStyle}
+        }
+    }
+}
+```
+or like this:
+```javascript
+Window root
+    Resources:
+        Style MyButtonStyle Button
+            set:
+                Background: Red; Foreground: Green
+            on:
+                {=this.IsMouseOver}:
+                    set:
+                        Background: Yellow; Foreground: Blue
+    Grid
+        RowDefinitions: [ { Height: * } ]
+        ColumnDefinitions: [ { Width: * } ]
+        Button btnPressMe
+            Content: 'Press me!', Style: {@MyButtonStyle}
+```
+
 Current limitations
 ===================
 
